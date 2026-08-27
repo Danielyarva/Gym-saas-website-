@@ -17,7 +17,10 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@types/multer": "^2.2.0",
     "argon2": "^0.41.1",
+    "cloudinary": "^2.11.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -25,9 +28,9 @@
     "express-rate-limit": "^7.4.1",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.2.0",
     "pino": "^9.5.0",
     "pino-http": "^10.3.0",
-    "@prisma/client": "^5.22.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

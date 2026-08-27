@@ -22,6 +22,7 @@ export async function resetDatabase(): Promise<void> {
   await prisma.nutritionPlan.deleteMany();
 
   await prisma.dailyCheckIn.deleteMany();
+  await prisma.progressPhoto.deleteMany();
   await prisma.clientNote.deleteMany();
   await prisma.clientInviteToken.deleteMany();
   await prisma.clientOnboarding.deleteMany();

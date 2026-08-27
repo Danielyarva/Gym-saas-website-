@@ -23,4 +23,12 @@ export const bodyMeasurementRepository = {
     }
     return prisma.bodyMeasurement.create({ data: { ...data, clientId, source: 'ONBOARDING' } });
   },
+
+  /** Raw, oldest-first rows for the progress-charts endpoint — every source (onboarding baseline + ongoing check-ins), no pagination. */
+  listInRange(clientId: string, from?: Date) {
+    return prisma.bodyMeasurement.findMany({
+      where: { clientId, ...(from ? { recordedAt: { gte: from } } : {}) },
+      orderBy: { recordedAt: 'asc' },
+    });
+  },
 };

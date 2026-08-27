@@ -42,6 +42,8 @@ enum AuditAction {
   WORKOUT_PLAN_ASSIGNED
   NUTRITION_PLAN_ASSIGNED
   CHECK_IN_SUBMITTED
+  PROGRESS_PHOTO_UPLOADED
+  PROGRESS_PHOTO_DELETED
 }
 
 enum GoalType {
@@ -235,6 +237,7 @@ model Client {
   workoutLogs      WorkoutLog[]
   nutritionPlans   NutritionPlan[]
   dailyCheckIns    DailyCheckIn[]
+  progressPhotos   ProgressPhoto[]
 
   @@map("clients")
 }
@@ -699,4 +702,18 @@ model DailyCheckIn {
   @@unique([clientId, date])
   @@index([clientId, date])
   @@map("daily_checkins")
+}
+
+model ProgressPhoto {
+  id        String    @id @default(uuid()) @db.Uuid
+  clientId  String    @map("client_id") @db.Uuid
+  url       String
+  takenAt   DateTime  @map("taken_at") @db.Date
+  notes     String?   @db.Text
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, takenAt])
+  @@map("progress_photos")
 }

@@ -12,3 +12,9 @@ export function dateOnly(date: Date): Date {
 export function daysBetween(a: Date, b: Date): number {
   return Math.round((dateOnly(a).getTime() - dateOnly(b).getTime()) / (24 * 60 * 60 * 1000));
 }
+
+export function subtractDays(date: Date, days: number): Date {
+  const result = dateOnly(date);
+  result.setUTCDate(result.getUTCDate() - days);
+  return result;
+}

@@ -25,6 +25,14 @@ const envSchema = z.object({
   EMAIL_API_KEY: z.string().optional().default(''),
   EMAIL_FROM: z.string().default('AI Coach OS <no-reply@aicoachos.example>'),
 
+  // Progress photos (PRD §27). Unset in local dev — storage.service.ts falls
+  // back to writing files to backend/uploads/ and serving them locally,
+  // the same "log instead of send" fallback email.service.ts uses.
+  CLOUDINARY_CLOUD_NAME: z.string().optional().default(''),
+  CLOUDINARY_API_KEY: z.string().optional().default(''),
+  CLOUDINARY_API_SECRET: z.string().optional().default(''),
+  MAX_UPLOAD_SIZE_MB: z.coerce.number().int().positive().default(5),
+
   SEED_ADMIN_EMAIL: z.string().optional(),
   SEED_ADMIN_PASSWORD: z.string().optional(),
 

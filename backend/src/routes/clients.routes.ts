@@ -15,6 +15,8 @@ import workoutRoutes from './workout.routes';
 import nutritionPlansRoutes from './nutrition-plans.routes';
 import nutritionPlanRoutes from './nutrition-plan.routes';
 import checkinsRoutes from './checkins.routes';
+import progressPhotosRoutes from './progress-photos.routes';
+import progressRoutes from './progress.routes';
 
 const router = Router();
 
@@ -82,5 +84,7 @@ router.use('/:id/workout', workoutRoutes);
 router.use('/:id/nutrition-plans', nutritionPlansRoutes);
 router.use('/:id/nutrition-plan', nutritionPlanRoutes);
 router.use('/:id/checkins', checkinsRoutes);
+router.use('/:id/progress-photos', progressPhotosRoutes);
+router.use('/:id/progress', progressRoutes);
 
 export default router;

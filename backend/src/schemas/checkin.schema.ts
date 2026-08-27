@@ -14,6 +14,13 @@ export const submitCheckInSchema = z.object({
   energy: energyEnum.optional(),
   nutritionAdherence: adherenceEnum.optional(),
   notes: z.string().trim().max(1000).optional(),
+  // Optional periodic body measurements (Phase 3) — when any are present,
+  // the service also upserts a same-day BodyMeasurement row (source: CHECK_IN).
+  waistCm: z.coerce.number().positive().max(300).optional(),
+  chestCm: z.coerce.number().positive().max(300).optional(),
+  armsCm: z.coerce.number().positive().max(300).optional(),
+  hipsCm: z.coerce.number().positive().max(300).optional(),
+  thighsCm: z.coerce.number().positive().max(300).optional(),
 });
 
 export const listCheckInsQuerySchema = z.object({

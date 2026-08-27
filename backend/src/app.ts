@@ -1,3 +1,4 @@
+import path from 'node:path';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -21,6 +22,20 @@ export function createApp(): Express {
 
   app.use(helmet());
   app.use(cors(corsOptions));
+
+  // Local-storage fallback for progress photos (storage.service.ts) when
+  // Cloudinary isn't configured. Helmet's default same-origin CORP would
+  // otherwise block the frontend's <img> tags (a different origin/port)
+  // from loading these — relaxed only for this one path.
+  app.use(
+    '/uploads',
+    (_req, res, next) => {
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      next();
+    },
+    express.static(path.resolve(process.cwd(), 'uploads')),
+  );
+
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
   app.use(requestContext);

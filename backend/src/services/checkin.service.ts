@@ -2,7 +2,9 @@ import type { Request } from 'express';
 import { checkinRepository, type CheckInInput } from '../repositories/checkin.repository';
 import { auditService } from './audit.service';
 import { AppError } from '../utils/app-error';
-import { todayDateOnly, dateOnly, daysBetween } from '../utils/date';
+import { todayDateOnly, dateOnly, daysBetween, subtractDays } from '../utils/date';
+
+const ADHERENCE_WINDOW_DAYS = 30;
 
 function toNumberOrNull(value: unknown): number | null {
   if (value === null || value === undefined) return null;
@@ -37,6 +39,11 @@ function toPublicCheckIn(checkIn: {
 
 interface SubmitInput extends CheckInInput {
   date?: Date;
+  waistCm?: number;
+  chestCm?: number;
+  armsCm?: number;
+  hipsCm?: number;
+  thighsCm?: number;
 }
 
 async function submit(clientId: string, input: SubmitInput, req: Request) {
@@ -50,16 +57,28 @@ async function submit(clientId: string, input: SubmitInput, req: Request) {
     throw new AppError('VALIDATION_ERROR', 'Check-ins can only be submitted for today or yesterday');
   }
 
-  const checkIn = await checkinRepository.upsertForDate(clientId, date, {
-    weightKg: input.weightKg,
-    workoutCompleted: input.workoutCompleted,
-    steps: input.steps,
-    sleepHours: input.sleepHours,
-    mood: input.mood,
-    energy: input.energy,
-    nutritionAdherence: input.nutritionAdherence,
-    notes: input.notes,
-  });
+  const checkIn = await checkinRepository.upsertForDate(
+    clientId,
+    date,
+    {
+      weightKg: input.weightKg,
+      workoutCompleted: input.workoutCompleted,
+      steps: input.steps,
+      sleepHours: input.sleepHours,
+      mood: input.mood,
+      energy: input.energy,
+      nutritionAdherence: input.nutritionAdherence,
+      notes: input.notes,
+    },
+    {
+      waistCm: input.waistCm,
+      chestCm: input.chestCm,
+      armsCm: input.armsCm,
+      hipsCm: input.hipsCm,
+      thighsCm: input.thighsCm,
+    },
+    subtractDays(today, ADHERENCE_WINDOW_DAYS),
+  );
 
   await auditService.log({ req, actorUserId: req.user?.id, action: 'CHECK_IN_SUBMITTED', entityType: 'CLIENT', entityId: clientId, metadata: { date: date.toISOString() } });
 
