@@ -10,6 +10,8 @@ import { listClientsQuerySchema, createClientSchema, updateClientSchema } from '
 import { createNoteSchema, updateNoteSchema } from '../schemas/note.schema';
 import { uuidParamSchema, uuidNestedParamSchema } from '../schemas/common.schema';
 import onboardingRoutes from './onboarding.routes';
+import workoutPlansRoutes from './workout-plans.routes';
+import workoutRoutes from './workout.routes';
 
 const router = Router();
 
@@ -72,5 +74,7 @@ router.delete(
 );
 
 router.use('/:id/onboarding', onboardingRoutes);
+router.use('/:id/workout-plans', workoutPlansRoutes);
+router.use('/:id/workout', workoutRoutes);
 
 export default router;
