@@ -4,10 +4,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Dumbbell, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { TodayWorkoutView } from '@/components/client-app/workout/today-workout-view';
+import { ActivePlanView } from '@/components/client-app/nutrition/active-plan-view';
 import { useMe, useLogout } from '@/hooks/use-auth';
 
-export default function TodayPage() {
+export default function NutritionPage() {
   const router = useRouter();
   const { data: me } = useMe();
   const logout = useLogout();
@@ -23,10 +23,10 @@ export default function TodayPage() {
           <span className="text-sm font-semibold text-foreground">AI Coach OS</span>
         </div>
         <nav className="flex items-center gap-4 text-sm">
-          <span className="font-medium text-foreground">Today</span>
-          <Link href="/nutrition" className="text-muted-foreground hover:text-foreground">
-            Nutrition
+          <Link href="/today" className="text-muted-foreground hover:text-foreground">
+            Today
           </Link>
+          <span className="font-medium text-foreground">Nutrition</span>
         </nav>
         <Button variant="ghost" size="icon" onClick={() => logout.mutate(undefined, { onSuccess: () => router.replace('/login') })} aria-label="Log out">
           <LogOut />
@@ -34,7 +34,7 @@ export default function TodayPage() {
       </header>
 
       <main className="mx-auto w-full max-w-lg space-y-6 px-4 py-6">
-        <TodayWorkoutView clientId={clientId} />
+        <ActivePlanView clientId={clientId} />
       </main>
     </div>
   );

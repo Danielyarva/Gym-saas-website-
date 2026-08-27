@@ -1,10 +1,9 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { UtensilsCrossed } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ComingSoon } from '@/components/clients/profile/coming-soon';
 import { WorkoutPlanBuilder } from '@/components/workouts/workout-plan-builder';
+import { NutritionPlanBuilder } from '@/components/nutrition/nutrition-plan-builder';
 
 export default function ClientPlanPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,7 +20,7 @@ export default function ClientPlanPage() {
       </TabsContent>
 
       <TabsContent value="nutrition">
-        <ComingSoon icon={UtensilsCrossed} feature="Nutrition plans" phase={2} />
+        <NutritionPlanBuilder clientId={id} />
       </TabsContent>
     </Tabs>
   );

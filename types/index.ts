@@ -235,6 +235,52 @@ export interface TodayWorkout {
   log: { id: string; status: WorkoutLogStatus; date: string } | null;
 }
 
+export type NutritionPlanStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+export type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK';
+
+export interface NutritionTotals {
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fiberG: number;
+}
+
+export interface NutritionFoodDetail {
+  id: string;
+  order: number;
+  name: string;
+  quantity: string;
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fiberG: number;
+}
+
+export interface NutritionMealDetail {
+  id: string;
+  type: MealType;
+  order: number;
+  name: string | null;
+  foods: NutritionFoodDetail[];
+  totals: NutritionTotals;
+}
+
+export interface NutritionPlanSummary {
+  id: string;
+  name: string;
+  status: NutritionPlanStatus;
+  dailyWaterTargetMl: number | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface NutritionPlanDetail extends NutritionPlanSummary {
+  meals: NutritionMealDetail[];
+  dailyTotals: NutritionTotals;
+}
+
 export interface ApiErrorBody {
   success: false;
   error: {
