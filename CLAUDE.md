@@ -8,7 +8,9 @@ Fitness/transformation coaching SaaS. Coaches manage clients, workout/nutrition 
 
 Phase 1 complete — authentication, coach dashboard, client management, client profile (PRD §7–10, §36) are implemented on both frontend and backend, code-reviewed, and verified end-to-end in a real browser (desktop + mobile).
 
-Next up: Phase 2 — Onboarding, workout plans, nutrition plans, daily check-ins (PRD §11–14). Start it in plan mode per the working process below.
+Phase 2 complete — client account invites, onboarding, the exercise library, workout plan builder, nutrition plan builder, daily check-ins, and the client app shell (PRD §11–14) are implemented on both frontend and backend, code-reviewed, and verified end-to-end in a real browser (desktop + mobile). Along the way, fixed two role-handling gaps Phase 1 never needed: `(dashboard)/layout.tsx` had no role gate, and `/login` always redirected to `/dashboard` regardless of role.
+
+Next up: Phase 3 — Progress tracking, charts, progress photos, weekly reports (PRD §15 and phase breakdown). Start it in plan mode per the working process below.
 
 > Update this line yourself as each phase finishes.
 
