@@ -137,4 +137,23 @@ describe('nutrition plan builder', () => {
     const otherCoachReadRes = await otherCoach.agent.get(`/api/clients/${client.clientId}/nutrition-plan/active`);
     expect(otherCoachReadRes.status).toBe(404);
   });
+
+  it('enforces one active plan per client: activating a second plan archives the first', async () => {
+    const coach = await registerCoach('nutrition-coach-invariant@example.com', 'Coach Invariant');
+    const client = await createOnboardedClientAccount(coach, 'nutrition-client-invariant@example.com', 'Client Invariant');
+
+    const planARes = await coach.agent.post(`/api/clients/${client.clientId}/nutrition-plans`).set('X-CSRF-Token', coach.csrfToken).send({ name: 'Plan A' });
+    const planAId = planARes.body.data.id;
+    const planBRes = await coach.agent.post(`/api/clients/${client.clientId}/nutrition-plans`).set('X-CSRF-Token', coach.csrfToken).send({ name: 'Plan B' });
+    const planBId = planBRes.body.data.id;
+
+    await coach.agent.patch(`/api/clients/${client.clientId}/nutrition-plans/${planAId}`).set('X-CSRF-Token', coach.csrfToken).send({ status: 'ACTIVE' });
+    await coach.agent.patch(`/api/clients/${client.clientId}/nutrition-plans/${planBId}`).set('X-CSRF-Token', coach.csrfToken).send({ status: 'ACTIVE' });
+
+    const planAAfterRes = await coach.agent.get(`/api/clients/${client.clientId}/nutrition-plans/${planAId}`);
+    expect(planAAfterRes.body.data.status).toBe('ARCHIVED');
+
+    const activeCount = await prisma.nutritionPlan.count({ where: { clientId: client.clientId, status: 'ACTIVE' } });
+    expect(activeCount).toBe(1);
+  });
 });

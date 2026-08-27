@@ -142,6 +142,33 @@ describe('workout plan builder', () => {
     expect(getPlanRes.body.data.days.map((d: { id: string }) => d.id)).toEqual([dayBId, dayAId]);
   });
 
+  it('enforces one active plan per client: activating a second plan archives the first', async () => {
+    const coach = await registerCoach('plan-coach-invariant@example.com', 'Coach Invariant');
+    const client = await createOnboardedClientAccount(coach, 'plan-client-invariant@example.com', 'Client Invariant');
+
+    const planARes = await coach.agent.post(`/api/clients/${client.clientId}/workout-plans`).set('X-CSRF-Token', coach.csrfToken).send({ name: 'Plan A' });
+    const planAId = planARes.body.data.id;
+    const planBRes = await coach.agent.post(`/api/clients/${client.clientId}/workout-plans`).set('X-CSRF-Token', coach.csrfToken).send({ name: 'Plan B' });
+    const planBId = planBRes.body.data.id;
+
+    await coach.agent.patch(`/api/clients/${client.clientId}/workout-plans/${planAId}`).set('X-CSRF-Token', coach.csrfToken).send({ status: 'ACTIVE' });
+    const afterFirstActivation = await coach.agent.get(`/api/clients/${client.clientId}/workout-plans/${planAId}`);
+    expect(afterFirstActivation.body.data.status).toBe('ACTIVE');
+
+    const activateSecondRes = await coach.agent
+      .patch(`/api/clients/${client.clientId}/workout-plans/${planBId}`)
+      .set('X-CSRF-Token', coach.csrfToken)
+      .send({ status: 'ACTIVE' });
+    expect(activateSecondRes.status).toBe(200);
+    expect(activateSecondRes.body.data.status).toBe('ACTIVE');
+
+    const planAAfterRes = await coach.agent.get(`/api/clients/${client.clientId}/workout-plans/${planAId}`);
+    expect(planAAfterRes.body.data.status).toBe('ARCHIVED');
+
+    const activeCount = await prisma.workoutPlan.count({ where: { clientId: client.clientId, status: 'ACTIVE' } });
+    expect(activeCount).toBe(1);
+  });
+
   it('blocks a coach from touching another coach\'s client plan, and a coach cannot access a workout day/exercise through the wrong plan', async () => {
     const coachA = await registerCoach('plan-coach-b@example.com', 'Coach B');
     const coachB = await registerCoach('plan-coach-c@example.com', 'Coach C');
