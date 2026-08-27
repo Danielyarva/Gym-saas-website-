@@ -1,14 +1,10 @@
 import { workoutPlanRepository, workoutExerciseRepository } from '../repositories/workout-plan.repository';
 import { workoutLogRepository, exerciseLogRepository } from '../repositories/workout-log.repository';
 import { AppError } from '../utils/app-error';
+import { todayDateOnly } from '../utils/date';
 
 type PlanWithDays = NonNullable<Awaited<ReturnType<typeof workoutPlanRepository.findActiveForClient>>>;
 type DayWithExercises = PlanWithDays['days'][number];
-
-function todayDateOnly(): Date {
-  const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-}
 
 /**
  * Resolves "today's" WorkoutDay for a plan with no rigid calendar (Phase 2 has
