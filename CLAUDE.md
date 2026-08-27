@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # AI Coach OS
 
 Fitness/transformation coaching SaaS. Coaches manage clients, workout/nutrition plans, and check-ins; clients track progress and use an AI chat coach. Full spec: `docs/PRD.md`.
