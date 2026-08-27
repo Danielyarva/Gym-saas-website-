@@ -1,6 +1,9 @@
-import { LineChart } from 'lucide-react';
-import { ComingSoon } from '@/components/clients/profile/coming-soon';
+'use client';
+
+import { useParams } from 'next/navigation';
+import { CheckInHistory } from '@/components/checkins/checkin-history';
 
 export default function ClientProgressPage() {
-  return <ComingSoon icon={LineChart} feature="Progress tracking" phase={3} />;
+  const { id } = useParams<{ id: string }>();
+  return <CheckInHistory clientId={id} />;
 }

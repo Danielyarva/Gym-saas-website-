@@ -281,6 +281,30 @@ export interface NutritionPlanDetail extends NutritionPlanSummary {
   dailyTotals: NutritionTotals;
 }
 
+export type MoodLevel = 'VERY_LOW' | 'LOW' | 'NEUTRAL' | 'GOOD' | 'VERY_GOOD';
+export type EnergyLevel = 'VERY_LOW' | 'LOW' | 'NEUTRAL' | 'GOOD' | 'VERY_GOOD';
+export type AdherenceLevel = 'POOR' | 'FAIR' | 'GOOD' | 'EXCELLENT';
+
+export interface DailyCheckIn {
+  id: string;
+  date: string;
+  weightKg: number | null;
+  workoutCompleted: boolean | null;
+  steps: number | null;
+  sleepHours: number | null;
+  mood: MoodLevel | null;
+  energy: EnergyLevel | null;
+  nutritionAdherence: AdherenceLevel | null;
+  notes: string | null;
+}
+
+export interface CheckInListResult {
+  checkIns: DailyCheckIn[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface ApiErrorBody {
   success: false;
   error: {

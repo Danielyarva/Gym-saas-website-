@@ -27,6 +27,9 @@ export default function TodayPage() {
           <Link href="/nutrition" className="text-muted-foreground hover:text-foreground">
             Nutrition
           </Link>
+          <Link href="/checkin" className="text-muted-foreground hover:text-foreground">
+            Check-in
+          </Link>
         </nav>
         <Button variant="ghost" size="icon" onClick={() => logout.mutate(undefined, { onSuccess: () => router.replace('/login') })} aria-label="Log out">
           <LogOut />

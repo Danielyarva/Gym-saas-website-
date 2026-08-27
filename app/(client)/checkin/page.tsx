@@ -4,10 +4,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Dumbbell, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ActivePlanView } from '@/components/client-app/nutrition/active-plan-view';
+import { CheckInForm } from '@/components/client-app/checkin/checkin-form';
 import { useMe, useLogout } from '@/hooks/use-auth';
 
-export default function NutritionPage() {
+export default function CheckInPage() {
   const router = useRouter();
   const { data: me } = useMe();
   const logout = useLogout();
@@ -26,10 +26,10 @@ export default function NutritionPage() {
           <Link href="/today" className="text-muted-foreground hover:text-foreground">
             Today
           </Link>
-          <span className="font-medium text-foreground">Nutrition</span>
-          <Link href="/checkin" className="text-muted-foreground hover:text-foreground">
-            Check-in
+          <Link href="/nutrition" className="text-muted-foreground hover:text-foreground">
+            Nutrition
           </Link>
+          <span className="font-medium text-foreground">Check-in</span>
         </nav>
         <Button variant="ghost" size="icon" onClick={() => logout.mutate(undefined, { onSuccess: () => router.replace('/login') })} aria-label="Log out">
           <LogOut />
@@ -37,7 +37,7 @@ export default function NutritionPage() {
       </header>
 
       <main className="mx-auto w-full max-w-lg space-y-6 px-4 py-6">
-        <ActivePlanView clientId={clientId} />
+        <CheckInForm clientId={clientId} />
       </main>
     </div>
   );
