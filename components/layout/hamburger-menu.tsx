@@ -32,7 +32,7 @@ export function HamburgerMenu() {
             const active = pathname.startsWith(item.href);
             return (
               <Link
-                key={item.href}
+                key={item.label}
                 href={item.comingSoon ? '#' : item.href}
                 aria-disabled={item.comingSoon}
                 onClick={() => !item.comingSoon && setOpen(false)}

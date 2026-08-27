@@ -25,9 +25,10 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Clients', href: '/clients', icon: Users },
-  // Still flagged: plans are client-scoped (built at /clients/[id]/plan), and
-  // there's no single global destination a top-level nav item could link to.
-  { label: 'Plans', href: '/plans', icon: ClipboardList, comingSoon: true },
+  // No standalone /plans page — every plan is client-scoped (built at
+  // /clients/[id]/plan), so this opens the client list, the natural
+  // starting point for picking who to build a plan for.
+  { label: 'Plans', href: '/clients', icon: ClipboardList },
   { label: 'Progress', href: '/progress', icon: LineChart, comingSoon: true },
   { label: 'AI Coach', href: '/ai-coach', icon: MessageCircle, comingSoon: true },
   { label: 'Reports', href: '/reports', icon: FileText, comingSoon: true },
@@ -41,8 +42,9 @@ export const NAV_ITEMS: NavItem[] = [
 export const BOTTOM_NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Clients', href: '/clients', icon: Users },
-  // Still flagged: plans are client-scoped (built at /clients/[id]/plan), and
-  // there's no single global destination a top-level nav item could link to.
-  { label: 'Plans', href: '/plans', icon: ClipboardList, comingSoon: true },
+  // No standalone /plans page — every plan is client-scoped (built at
+  // /clients/[id]/plan), so this opens the client list, the natural
+  // starting point for picking who to build a plan for.
+  { label: 'Plans', href: '/clients', icon: ClipboardList },
   { label: 'Chat', href: '/ai-coach', icon: MessageCircle, comingSoon: true },
 ];

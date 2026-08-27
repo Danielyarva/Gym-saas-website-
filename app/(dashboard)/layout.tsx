@@ -8,13 +8,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isPending, isError } = useMe();
+  const { data: me, isPending, isError } = useMe();
+  const wrongRole = Boolean(me && me.user.role !== 'COACH');
 
   useEffect(() => {
     if (isError) router.replace('/login');
-  }, [isError, router]);
+    else if (wrongRole) router.replace('/today');
+  }, [isError, wrongRole, router]);
 
-  if (isPending) {
+  if (isPending || isError || wrongRole) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="w-full max-w-sm space-y-3">
@@ -25,8 +27,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
     );
   }
-
-  if (isError) return null;
 
   return <DashboardShell>{children}</DashboardShell>;
 }

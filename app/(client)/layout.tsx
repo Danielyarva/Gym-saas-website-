@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useMe } from '@/hooks/use-auth';
 import { useOnboarding } from '@/hooks/use-onboarding';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ClientShell } from '@/components/layout/client-shell';
 
 /**
  * Role gate for every /onboarding, /today, /workout, /nutrition, /checkin
@@ -45,5 +46,5 @@ export default function ClientAppLayout({ children }: { children: React.ReactNod
     );
   }
 
-  return <>{children}</>;
+  return onOnboardingRoute ? <>{children}</> : <ClientShell>{children}</ClientShell>;
 }

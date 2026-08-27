@@ -51,9 +51,9 @@ export function Sidebar() {
           );
 
           return item.comingSoon ? (
-            <div key={item.href}>{content}</div>
+            <div key={item.label}>{content}</div>
           ) : (
-            <Link key={item.href} href={item.href}>
+            <Link key={item.label} href={item.href}>
               {content}
             </Link>
           );

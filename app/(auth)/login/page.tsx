@@ -23,7 +23,7 @@ export default function LoginPage() {
 
   const onSubmit = (values: LoginFormValues) => {
     login.mutate(values, {
-      onSuccess: () => router.replace('/dashboard'),
+      onSuccess: (data) => router.replace(data.user.role === 'CLIENT' ? '/today' : '/dashboard'),
       onError: (error) => {
         toast.error(error instanceof ApiError ? error.message : 'Something went wrong');
       },

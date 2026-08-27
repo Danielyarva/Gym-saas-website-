@@ -22,7 +22,7 @@ export function BottomNav() {
           const active = pathname.startsWith(item.href);
           return (
             <Link
-              key={item.href}
+              key={item.label}
               href={item.comingSoon ? '#' : item.href}
               aria-disabled={item.comingSoon}
               className={cn(
