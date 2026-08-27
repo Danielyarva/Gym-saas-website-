@@ -4,6 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import pinoHttp from 'pino-http';
 import { corsOptions } from './config/cors';
+import { env } from './config/env';
 import { logger } from './config/logger';
 import { requestContext } from './middleware/request-context';
 import { apiRateLimiter } from './middleware/rate-limit';
@@ -13,6 +14,10 @@ import routes from './routes';
 
 export function createApp(): Express {
   const app = express();
+
+  if (env.TRUST_PROXY_HOPS > 0) {
+    app.set('trust proxy', env.TRUST_PROXY_HOPS);
+  }
 
   app.use(helmet());
   app.use(cors(corsOptions));

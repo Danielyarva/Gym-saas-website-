@@ -29,6 +29,12 @@ const envSchema = z.object({
 
   RATE_LIMIT_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(300),
+
+  // Number of hops to trust for X-Forwarded-For (Express's `trust proxy`).
+  // Leave at 0 unless actually deployed behind a reverse proxy/load balancer
+  // (Render/Railway/nginx/ALB) — trusting it without one lets any client
+  // spoof req.ip via the header, defeating both rate limiting and audit logs.
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).default(0),
 });
 
 const parsed = envSchema.safeParse(process.env);

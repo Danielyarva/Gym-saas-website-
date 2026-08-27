@@ -92,4 +92,41 @@ describe('coach-client ownership isolation (PRD §32)', () => {
       .send({ body: 'Hijacked' });
     expect(otherCoachEditRes.status).toBe(404);
   });
+
+  it("never lets a coach edit or delete a note through a different client of their own that they also own", async () => {
+    const coach = await registerCoach('coach-g@example.com', 'Coach G');
+
+    const clientARes = await coach.agent
+      .post('/api/clients')
+      .set('X-CSRF-Token', coach.csrfToken)
+      .send({ fullName: 'Client A', email: 'client-a-notes@example.com' });
+    const clientBRes = await coach.agent
+      .post('/api/clients')
+      .set('X-CSRF-Token', coach.csrfToken)
+      .send({ fullName: 'Client B', email: 'client-b-notes@example.com' });
+    const clientAId = clientARes.body.data.id as string;
+    const clientBId = clientBRes.body.data.id as string;
+
+    const noteRes = await coach.agent
+      .post(`/api/clients/${clientAId}/notes`)
+      .set('X-CSRF-Token', coach.csrfToken)
+      .send({ body: 'Belongs to client A' });
+    const noteId = noteRes.body.data.id as string;
+
+    // The coach owns both clients and authored the note, but the note
+    // belongs to client A — reaching it through client B's URL must 404.
+    const crossClientEditRes = await coach.agent
+      .patch(`/api/clients/${clientBId}/notes/${noteId}`)
+      .set('X-CSRF-Token', coach.csrfToken)
+      .send({ body: 'Hijacked via wrong client id' });
+    expect(crossClientEditRes.status).toBe(404);
+
+    const crossClientDeleteRes = await coach.agent.delete(`/api/clients/${clientBId}/notes/${noteId}`).set('X-CSRF-Token', coach.csrfToken);
+    expect(crossClientDeleteRes.status).toBe(404);
+
+    // The note is untouched and still reachable through its real client.
+    const stillThereRes = await coach.agent.get(`/api/clients/${clientAId}/notes`);
+    expect(stillThereRes.body.data).toHaveLength(1);
+    expect(stillThereRes.body.data[0].body).toBe('Belongs to client A');
+  });
 });

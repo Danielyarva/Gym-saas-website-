@@ -75,8 +75,15 @@ async function getById(coachId: string, clientId: string) {
 }
 
 async function create(coachId: string, input: CreateClientInput, req: Request) {
-  const existingUser = await userRepository.findByEmail(input.email);
-  if (existingUser) {
+  // Client.email and User.email are both globally unique (schema-level constraints),
+  // and a future client could collide with either — check both up front so this
+  // surfaces as 409 EMAIL_ALREADY_EXISTS instead of an uncaught Prisma constraint
+  // violation turning into a 500.
+  const [existingUser, existingClient] = await Promise.all([
+    userRepository.findByEmail(input.email),
+    clientRepository.findByEmail(input.email),
+  ]);
+  if (existingUser || existingClient) {
     throw new AppError('EMAIL_ALREADY_EXISTS', 'A client with this email already exists');
   }
 

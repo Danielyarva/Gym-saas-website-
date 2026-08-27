@@ -45,6 +45,10 @@ export const clientRepository = {
     return prisma.client.findUnique({ where: { userId } });
   },
 
+  findByEmail(email: string) {
+    return prisma.client.findUnique({ where: { email } });
+  },
+
   async list(coachId: string, filters: ListClientsFilters) {
     const where: Prisma.CoachClientWhereInput = {
       coachId,

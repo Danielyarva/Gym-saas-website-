@@ -14,11 +14,11 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const update = asyncHandler(async (req: Request, res: Response) => {
-  const data = await notesService.update(req.params.noteId!, req.user!.coachId!, req.body.body, req);
+  const data = await notesService.update(req.params.noteId!, req.params.id!, req.user!.coachId!, req.body.body, req);
   sendSuccess(res, data, 'Note updated');
 });
 
 export const remove = asyncHandler(async (req: Request, res: Response) => {
-  await notesService.remove(req.params.noteId!, req.user!.coachId!, req);
+  await notesService.remove(req.params.noteId!, req.params.id!, req.user!.coachId!, req);
   sendSuccess(res, null, 'Note deleted');
 });
