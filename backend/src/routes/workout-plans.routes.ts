@@ -4,7 +4,7 @@ import { requireRole } from '../middleware/require-role';
 import { requireClientOwnership } from '../middleware/require-client-ownership';
 import { csrfProtection } from '../middleware/csrf';
 import { validate } from '../middleware/validate';
-import { uuidParamSchema } from '../schemas/common.schema';
+import { uuidParamSchema, reorderIdsSchema } from '../schemas/common.schema';
 import {
   planIdParamSchema,
   dayIdParamSchema,
@@ -13,7 +13,6 @@ import {
   updateWorkoutPlanSchema,
   createWorkoutDaySchema,
   updateWorkoutDaySchema,
-  reorderIdsSchema,
   createWorkoutExerciseSchema,
   updateWorkoutExerciseSchema,
 } from '../schemas/workout-plan.schema';

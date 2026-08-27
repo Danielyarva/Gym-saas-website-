@@ -42,10 +42,6 @@ export const createWorkoutDaySchema = z.object({
 
 export const updateWorkoutDaySchema = createWorkoutDaySchema.partial();
 
-export const reorderIdsSchema = z.object({
-  orderedIds: z.array(z.string().uuid()).min(1),
-});
-
 export const createWorkoutExerciseSchema = z.object({
   exerciseId: z.string().uuid(),
   sets: z.coerce.number().int().positive().max(50),

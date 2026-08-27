@@ -12,6 +12,8 @@ import { uuidParamSchema, uuidNestedParamSchema } from '../schemas/common.schema
 import onboardingRoutes from './onboarding.routes';
 import workoutPlansRoutes from './workout-plans.routes';
 import workoutRoutes from './workout.routes';
+import nutritionPlansRoutes from './nutrition-plans.routes';
+import nutritionPlanRoutes from './nutrition-plan.routes';
 
 const router = Router();
 
@@ -76,5 +78,7 @@ router.delete(
 router.use('/:id/onboarding', onboardingRoutes);
 router.use('/:id/workout-plans', workoutPlansRoutes);
 router.use('/:id/workout', workoutRoutes);
+router.use('/:id/nutrition-plans', nutritionPlansRoutes);
+router.use('/:id/nutrition-plan', nutritionPlanRoutes);
 
 export default router;
