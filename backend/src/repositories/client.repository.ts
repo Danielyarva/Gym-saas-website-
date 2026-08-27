@@ -54,6 +54,40 @@ export const clientRepository = {
     return prisma.client.update({ where: { id: clientId }, data: { userId } });
   },
 
+  /** Client reading their own record (identity IS ownership here — no separate owner id needed, unlike coach-scoped methods). */
+  findOwnProfile(clientId: string) {
+    return prisma.client.findUnique({ where: { id: clientId }, include: { profile: true } });
+  },
+
+  /** Onboarding step 3 sets the client's baseline weight — same "starting = current on day one" rule Phase 1 uses when a coach first adds a client. */
+  updateOwnStartingWeight(clientId: string, weightKg: number) {
+    return prisma.client.update({
+      where: { id: clientId },
+      data: { profile: { update: { startingWeightKg: weightKg, currentWeightKg: weightKg } } },
+    });
+  },
+
+  updateOwnBasicInfo(
+    clientId: string,
+    input: { fullName?: string; phone?: string; dateOfBirth?: Date; gender?: string; heightCm?: number },
+  ) {
+    return prisma.client.update({
+      where: { id: clientId },
+      data: {
+        fullName: input.fullName,
+        phone: input.phone,
+        profile: {
+          update: {
+            dateOfBirth: input.dateOfBirth,
+            gender: input.gender,
+            heightCm: input.heightCm,
+          },
+        },
+      },
+      include: { profile: true },
+    });
+  },
+
   async list(coachId: string, filters: ListClientsFilters) {
     const where: Prisma.CoachClientWhereInput = {
       coachId,

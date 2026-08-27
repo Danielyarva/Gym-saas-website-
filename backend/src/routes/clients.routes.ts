@@ -9,6 +9,7 @@ import { validate } from '../middleware/validate';
 import { listClientsQuerySchema, createClientSchema, updateClientSchema } from '../schemas/client.schema';
 import { createNoteSchema, updateNoteSchema } from '../schemas/note.schema';
 import { uuidParamSchema, uuidNestedParamSchema } from '../schemas/common.schema';
+import onboardingRoutes from './onboarding.routes';
 
 const router = Router();
 
@@ -69,5 +70,7 @@ router.delete(
   requireClientOwnership,
   notesController.remove,
 );
+
+router.use('/:id/onboarding', onboardingRoutes);
 
 export default router;

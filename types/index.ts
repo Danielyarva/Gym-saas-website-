@@ -115,6 +115,53 @@ export interface ClientNote {
   updatedAt: string;
 }
 
+export interface OnboardingGoal {
+  type: string;
+  targetValue: number | null;
+  targetUnit: string | null;
+  targetDate: string | null;
+  notes: string | null;
+}
+
+export interface OnboardingBodyMeasurement {
+  weightKg: number | null;
+  waistCm: number | null;
+  chestCm: number | null;
+  armsCm: number | null;
+  hipsCm: number | null;
+  thighsCm: number | null;
+}
+
+export interface OnboardingState {
+  basicInfo: {
+    fullName: string;
+    phone: string | null;
+    email: string;
+    dateOfBirth: string | null;
+    gender: string | null;
+    heightCm: number | null;
+  };
+  goal: OnboardingGoal | null;
+  bodyMeasurement: OnboardingBodyMeasurement | null;
+  trainingExperience: string | null;
+  trainingDaysPerWeek: number | null;
+  equipmentList: string[];
+  equipmentNotes: string | null;
+  dietaryPreferences: string[];
+  allergies: string[];
+  mealsPerDayPreference: number | null;
+  activityLevel: string | null;
+  occupationType: string | null;
+  stressLevel: number | null;
+  typicalSleepHours: number | null;
+  sleepQuality: string | null;
+  injuriesOrLimitations: string | null;
+  clearedForExercise: boolean | null;
+  needsMedicalClearance: boolean;
+  currentStep: number;
+  completedAt: string | null;
+}
+
 export interface ApiErrorBody {
   success: false;
   error: {
