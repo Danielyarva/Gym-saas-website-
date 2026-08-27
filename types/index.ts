@@ -305,6 +305,40 @@ export interface CheckInListResult {
   pageSize: number;
 }
 
+export interface ProgressPhoto {
+  id: string;
+  url: string;
+  takenAt: string;
+  notes: string | null;
+}
+
+export interface ProgressPhotoListResult {
+  items: ProgressPhoto[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export type ProgressRange = 'WEEKLY' | 'MONTHLY' | '3M' | '6M' | 'ALL';
+
+export interface ProgressPoint {
+  date: string;
+  value: number;
+}
+
+export interface ProgressCharts {
+  weight: ProgressPoint[];
+  waistCm: ProgressPoint[];
+  chestCm: ProgressPoint[];
+  armsCm: ProgressPoint[];
+  hipsCm: ProgressPoint[];
+  thighsCm: ProgressPoint[];
+  steps: ProgressPoint[];
+  sleepHours: ProgressPoint[];
+  workoutAdherence: ProgressPoint[];
+  nutritionAdherence: ProgressPoint[];
+}
+
 export interface ApiErrorBody {
   success: false;
   error: {

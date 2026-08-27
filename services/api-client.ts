@@ -31,7 +31,12 @@ async function rawRequest<T>(path: string, options: RequestOptions = {}): Promis
   const method = (options.method ?? 'GET').toUpperCase();
   const headers = new Headers(options.headers);
 
-  if (options.body !== undefined) {
+  const isFormData = options.body instanceof FormData;
+
+  // FormData bodies (progress photo uploads) must NOT get a JSON
+  // Content-Type — fetch sets the correct multipart boundary itself only
+  // when the header is left unset.
+  if (options.body !== undefined && !isFormData) {
     headers.set('Content-Type', 'application/json');
   }
   if (MUTATING_METHODS.has(method)) {
@@ -44,7 +49,7 @@ async function rawRequest<T>(path: string, options: RequestOptions = {}): Promis
     method,
     headers,
     credentials: 'include',
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    body: options.body === undefined ? undefined : isFormData ? (options.body as FormData) : JSON.stringify(options.body),
   });
 
   const json = (await res.json().catch(() => null)) as ApiSuccessBody<T> | ApiErrorBody | null;

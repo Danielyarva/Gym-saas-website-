@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useLogout } from '@/hooks/use-auth';
 import { CLIENT_NAV_ITEMS } from './client-nav-items';
 
-/** The client app's entire shell: a slim header (logo + logout) and a fixed bottom nav. Deliberately simpler than the coach dashboard's sidebar/hamburger — the client surface is only ever these three pages. */
+/** The client app's entire shell: a slim header (logo + logout) and a fixed bottom nav. Deliberately simpler than the coach dashboard's sidebar/hamburger — the client surface is only ever these four pages. */
 export function ClientShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -31,7 +31,7 @@ export function ClientShell({ children }: { children: React.ReactNode }) {
       <main className="mx-auto w-full max-w-lg space-y-6 px-4 py-6 pb-24">{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="mx-auto grid max-w-lg grid-cols-3">
+        <div className="mx-auto grid max-w-lg grid-cols-4">
           {CLIENT_NAV_ITEMS.map((item) => {
             const active = pathname.startsWith(item.href);
             return (

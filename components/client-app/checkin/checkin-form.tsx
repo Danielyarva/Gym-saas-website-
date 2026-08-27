@@ -1,10 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import type { z } from 'zod';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,6 +31,7 @@ const LABELS: Record<string, string> = {
 export function CheckInForm({ clientId }: { clientId: string }) {
   const { data: existing, isPending } = useTodayCheckIn(clientId);
   const submitCheckIn = useSubmitCheckIn(clientId);
+  const [showMeasurements, setShowMeasurements] = useState(false);
 
   const {
     register,
@@ -47,6 +49,11 @@ export function CheckInForm({ clientId }: { clientId: string }) {
       energy: existing?.energy ?? undefined,
       nutritionAdherence: existing?.nutritionAdherence ?? undefined,
       notes: existing?.notes ?? '',
+      waistCm: undefined,
+      chestCm: undefined,
+      armsCm: undefined,
+      hipsCm: undefined,
+      thighsCm: undefined,
     },
   });
 
@@ -174,6 +181,42 @@ export function CheckInForm({ clientId }: { clientId: string }) {
               )}
             />
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => setShowMeasurements((prev) => !prev)}
+            className="flex w-full items-center justify-between text-sm font-medium text-foreground"
+          >
+            Log body measurements (optional)
+            {showMeasurements ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+
+          {showMeasurements ? (
+            <div className="grid grid-cols-2 gap-3 pt-1 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="waistCm">Waist (cm)</Label>
+                <Input id="waistCm" type="number" step="0.1" {...register('waistCm')} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="chestCm">Chest (cm)</Label>
+                <Input id="chestCm" type="number" step="0.1" {...register('chestCm')} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="armsCm">Arms (cm)</Label>
+                <Input id="armsCm" type="number" step="0.1" {...register('armsCm')} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="hipsCm">Hips (cm)</Label>
+                <Input id="hipsCm" type="number" step="0.1" {...register('hipsCm')} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="thighsCm">Thighs (cm)</Label>
+                <Input id="thighsCm" type="number" step="0.1" {...register('thighsCm')} />
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="space-y-2">

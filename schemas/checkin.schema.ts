@@ -17,5 +17,10 @@ export const checkInFormSchema = z.object({
   energy: z.enum(energyOptions).optional(),
   nutritionAdherence: z.enum(adherenceOptions).optional(),
   notes: z.string().trim().max(1000).optional().or(z.literal('')),
+  waistCm: optionalNumber(z.coerce.number().positive().max(300)),
+  chestCm: optionalNumber(z.coerce.number().positive().max(300)),
+  armsCm: optionalNumber(z.coerce.number().positive().max(300)),
+  hipsCm: optionalNumber(z.coerce.number().positive().max(300)),
+  thighsCm: optionalNumber(z.coerce.number().positive().max(300)),
 });
 export type CheckInFormValues = z.infer<typeof checkInFormSchema>;

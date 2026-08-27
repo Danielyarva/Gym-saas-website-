@@ -10,6 +10,11 @@ export interface SubmitCheckInInput {
   energy?: EnergyLevel;
   nutritionAdherence?: AdherenceLevel;
   notes?: string;
+  waistCm?: number;
+  chestCm?: number;
+  armsCm?: number;
+  hipsCm?: number;
+  thighsCm?: number;
 }
 
 export const checkinsService = {
