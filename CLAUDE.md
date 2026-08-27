@@ -6,9 +6,11 @@ Fitness/transformation coaching SaaS. Coaches manage clients, workout/nutrition 
 
 ## Current phase
 
-Phase 1 — Authentication, coach dashboard, client management, client profile (PRD §7–10, §36).
+Phase 1 complete — authentication, coach dashboard, client management, client profile (PRD §7–10, §36) are implemented on both frontend and backend, code-reviewed, and verified end-to-end in a real browser (desktop + mobile).
 
-> Update this line yourself as each phase finishes, e.g. "Phase 2 — Onboarding, workout plans, nutrition plans, daily check-ins (PRD §11–14)."
+Next up: Phase 2 — Onboarding, workout plans, nutrition plans, daily check-ins (PRD §11–14). Start it in plan mode per the working process below.
+
+> Update this line yourself as each phase finishes.
 
 ## Working process
 
