@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import type { Coach, RefreshToken, User } from '@prisma/client';
+import type { Client, Coach, RefreshToken, User } from '@prisma/client';
 import { authService } from '../services/auth.service';
 import { asyncHandler } from '../utils/async-handler';
 import { sendSuccess } from '../utils/response';
@@ -22,6 +22,15 @@ function toPublicCoach(coach: Coach | null) {
     fullName: coach.fullName,
     businessName: coach.businessName,
     avatarUrl: coach.avatarUrl,
+  };
+}
+
+function toPublicClient(client: Client | null) {
+  if (!client) return null;
+  return {
+    id: client.id,
+    fullName: client.fullName,
+    email: client.email,
   };
 }
 
@@ -72,8 +81,8 @@ export const logoutAll = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const me = asyncHandler(async (req: Request, res: Response) => {
-  const { user, coach } = await authService.getMe(req.user!.id);
-  sendSuccess(res, { user: toPublicUser(user), coach: toPublicCoach(coach) });
+  const { user, coach, client } = await authService.getMe(req.user!.id);
+  sendSuccess(res, { user: toPublicUser(user), coach: toPublicCoach(coach), client: toPublicClient(client) });
 });
 
 export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
@@ -104,4 +113,19 @@ export const listSessions = asyncHandler(async (req: Request, res: Response) => 
 export const revokeSession = asyncHandler(async (req: Request, res: Response) => {
   await authService.revokeSession(req.user!.id, req.params.sessionId!);
   sendSuccess(res, null, 'Session revoked');
+});
+
+export const getInvite = asyncHandler(async (req: Request, res: Response) => {
+  const data = await authService.getInvitePreview(req.params.token!);
+  sendSuccess(res, data);
+});
+
+export const acceptInvite = asyncHandler(async (req: Request, res: Response) => {
+  const { user, client, accessToken, refreshToken, refreshExpiresAt, csrfToken } = await authService.acceptInvite(
+    req.params.token!,
+    req.body.password,
+    req,
+  );
+  tokenService.setAuthCookies(res, { accessToken, refreshToken, refreshExpiresAt, csrfToken });
+  sendSuccess(res, { user: toPublicUser(user), client: toPublicClient(client) }, 'Account created', 201);
 });

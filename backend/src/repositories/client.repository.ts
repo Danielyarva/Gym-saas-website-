@@ -49,6 +49,11 @@ export const clientRepository = {
     return prisma.client.findUnique({ where: { email } });
   },
 
+  /** Links a newly-created User to this Client row — the invite-accept flow's one write. */
+  linkUserAccount(clientId: string, userId: string) {
+    return prisma.client.update({ where: { id: clientId }, data: { userId } });
+  },
+
   async list(coachId: string, filters: ListClientsFilters) {
     const where: Prisma.CoachClientWhereInput = {
       coachId,

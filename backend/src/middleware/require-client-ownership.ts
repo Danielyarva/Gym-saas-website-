@@ -30,8 +30,9 @@ export async function requireClientOwnership(req: Request, _res: Response, next:
   next();
 }
 
-/** Parity middleware for the CLIENT role — not exercised by any Phase 1 route yet
- *  (Phase 1 has no client-facing app), built now so it isn't retrofitted later. */
+/** CLIENT-role parity middleware — Phase 1 built it unused, Phase 2 is the
+ *  first to exercise it (a client acting on their own workout/nutrition/
+ *  check-in data). */
 export function requireSelf(paramName = 'id') {
   return (req: Request, _res: Response, next: NextFunction): void => {
     const clientId = req.user?.clientId;
@@ -42,5 +43,27 @@ export function requireSelf(paramName = 'id') {
     }
 
     next();
+  };
+}
+
+/**
+ * For the handful of routes both a coach and their client legitimately read
+ * against the identical URL/response shape (check-in history, today's
+ * workout, the active nutrition plan) — letting a coach preview exactly what
+ * their client sees without a second endpoint. Every route that's a pure
+ * client action (submit check-in, mark exercise complete, onboarding writes)
+ * skips this and uses `requireSelf` directly instead.
+ */
+export function requireClientOwnershipOrSelf(paramName = 'id') {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (req.user?.role === 'CLIENT') {
+      requireSelf(paramName)(req, res, next);
+      return;
+    }
+    if (req.user?.role === 'COACH') {
+      void requireClientOwnership(req, res, next);
+      return;
+    }
+    next(new AppError('FORBIDDEN', 'You do not have permission to perform this action'));
   };
 }

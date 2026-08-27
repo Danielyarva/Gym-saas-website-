@@ -35,3 +35,8 @@ export const unarchive = asyncHandler(async (req: Request, res: Response) => {
   await clientsService.unarchive(req.user!.coachId!, req.params.id!, req);
   sendSuccess(res, null, 'Client restored');
 });
+
+export const invite = asyncHandler(async (req: Request, res: Response) => {
+  const data = await clientsService.invite(req.user!.coachId!, req.params.id!, req);
+  sendSuccess(res, data, 'Invite sent');
+});

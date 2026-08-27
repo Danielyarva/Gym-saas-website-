@@ -14,7 +14,7 @@ export function useMe(options?: { enabled?: boolean }) {
     queryKey: authQueryKeys.me,
     queryFn: async () => {
       const data = await authService.me();
-      setAuth(data.user, data.coach);
+      setAuth(data.user, data.coach, data.client);
       return data;
     },
     enabled: options?.enabled,
@@ -44,6 +44,28 @@ export function useRegister() {
     onSuccess: (data) => {
       setAuth(data.user, data.coach);
       queryClient.setQueryData(authQueryKeys.me, data);
+    },
+  });
+}
+
+export function useInvitePreview(token: string) {
+  return useQuery({
+    queryKey: ['auth', 'invite', token],
+    queryFn: () => authService.getInvitePreview(token),
+    enabled: Boolean(token),
+    retry: false,
+  });
+}
+
+export function useAcceptInvite() {
+  const queryClient = useQueryClient();
+  const setAuth = useAuthStore((state) => state.setAuth);
+
+  return useMutation({
+    mutationFn: ({ token, password }: { token: string; password: string }) => authService.acceptInvite(token, password),
+    onSuccess: (data) => {
+      setAuth(data.user, null, data.client);
+      queryClient.setQueryData(authQueryKeys.me, { user: data.user, coach: null, client: data.client });
     },
   });
 }

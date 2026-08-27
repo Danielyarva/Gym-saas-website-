@@ -36,6 +36,134 @@ enum AuditAction {
   CLIENT_NOTE_ADDED
   CLIENT_NOTE_UPDATED
   CLIENT_NOTE_DELETED
+  CLIENT_INVITED
+  CLIENT_INVITE_ACCEPTED
+  ONBOARDING_COMPLETED
+  WORKOUT_PLAN_ASSIGNED
+  NUTRITION_PLAN_ASSIGNED
+  CHECK_IN_SUBMITTED
+}
+
+enum GoalType {
+  WEIGHT_LOSS
+  MUSCLE_GAIN
+  ENDURANCE
+  STRENGTH
+  MOBILITY
+  GENERAL_FITNESS
+  OTHER
+}
+
+enum GoalStatus {
+  ACTIVE
+  ACHIEVED
+  ABANDONED
+}
+
+enum TrainingExperience {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ActivityLevel {
+  SEDENTARY
+  LIGHTLY_ACTIVE
+  MODERATELY_ACTIVE
+  VERY_ACTIVE
+}
+
+enum SleepQuality {
+  POOR
+  FAIR
+  GOOD
+  EXCELLENT
+}
+
+enum MuscleGroup {
+  CHEST
+  BACK
+  SHOULDERS
+  BICEPS
+  TRICEPS
+  LEGS
+  GLUTES
+  CORE
+  CARDIO
+  FULL_BODY
+  OTHER
+}
+
+enum EquipmentType {
+  BARBELL
+  DUMBBELL
+  MACHINE
+  CABLE
+  BODYWEIGHT
+  KETTLEBELL
+  BAND
+  OTHER
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum WorkoutPlanStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum WorkoutLogStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+enum NutritionPlanStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+enum MoodLevel {
+  VERY_LOW
+  LOW
+  NEUTRAL
+  GOOD
+  VERY_GOOD
+}
+
+enum EnergyLevel {
+  VERY_LOW
+  LOW
+  NEUTRAL
+  GOOD
+  VERY_GOOD
+}
+
+enum AdherenceLevel {
+  POOR
+  FAIR
+  GOOD
+  EXCELLENT
+}
+
+enum MeasurementSource {
+  ONBOARDING
+  CHECK_IN
+  MANUAL
 }
 
 model User {
@@ -55,7 +183,7 @@ model User {
   refreshTokens           RefreshToken[]
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]
-  auditLogs               AuditLog[]              @relation("AuditActor")
+  auditLogs               AuditLog[]               @relation("AuditActor")
 
   @@map("users")
 }
@@ -71,9 +199,13 @@ model Coach {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  coachClients CoachClient[]
-  clientNotes  ClientNote[]
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coachClients       CoachClient[]
+  clientNotes        ClientNote[]
+  clientInviteTokens ClientInviteToken[]
+  customExercises    Exercise[]
+  workoutPlans       WorkoutPlan[]
+  nutritionPlans     NutritionPlan[]
 
   @@map("coaches")
 }
@@ -95,12 +227,21 @@ model Client {
   coachClient CoachClient?
   notes       ClientNote[]
 
+  inviteTokens     ClientInviteToken[]
+  onboarding       ClientOnboarding?
+  goals            Goal[]
+  bodyMeasurements BodyMeasurement[]
+  workoutPlans     WorkoutPlan[]
+  workoutLogs      WorkoutLog[]
+  nutritionPlans   NutritionPlan[]
+  dailyCheckIns    DailyCheckIn[]
+
   @@map("clients")
 }
 
 model CoachClient {
-  id      String @id @default(uuid()) @db.Uuid
-  coachId String @map("coach_id") @db.Uuid
+  id       String @id @default(uuid()) @db.Uuid
+  coachId  String @map("coach_id") @db.Uuid
   // Unique: Phase 1 supports exactly one coach per client. Also the DB-level
   // backstop for "a coach can only access their own clients" — every query
   // for a client goes through this row, scoped by coachId.
@@ -171,8 +312,8 @@ model ClientNote {
 }
 
 model RefreshToken {
-  id     String @id @default(uuid()) @db.Uuid
-  userId String @map("user_id") @db.Uuid
+  id        String @id @default(uuid()) @db.Uuid
+  userId    String @map("user_id") @db.Uuid
   // Only the SHA-256 hash is stored — the raw token lives only in the cookie.
   tokenHash String @unique @map("token_hash")
 
@@ -238,4 +379,324 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2: client accounts (invite), onboarding, workout & nutrition plans,
+// daily check-ins. See docs/PRD.md §11-14.
+// ---------------------------------------------------------------------------
+
+model ClientInviteToken {
+  id               String    @id @default(uuid()) @db.Uuid
+  clientId         String    @map("client_id") @db.Uuid
+  invitedByCoachId String    @map("invited_by_coach_id") @db.Uuid
+  tokenHash        String    @unique @map("token_hash")
+  expiresAt        DateTime  @map("expires_at")
+  usedAt           DateTime? @map("used_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  client         Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  invitedByCoach Coach  @relation(fields: [invitedByCoachId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("client_invite_tokens")
+}
+
+model Goal {
+  id          String     @id @default(uuid()) @db.Uuid
+  clientId    String     @map("client_id") @db.Uuid
+  type        GoalType
+  targetValue Decimal?   @map("target_value") @db.Decimal(6, 2)
+  targetUnit  String?    @map("target_unit")
+  targetDate  DateTime?  @map("target_date") @db.Date
+  notes       String?    @db.Text
+  isPrimary   Boolean    @default(false) @map("is_primary")
+  status      GoalStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, status])
+  @@index([clientId, isPrimary])
+  @@map("goals")
+}
+
+// Append-only time series (weight/measurements over time) so Phase 3's
+// progress charts can read history with zero schema change — no chart
+// or reporting logic is built against this table yet.
+model BodyMeasurement {
+  id         String            @id @default(uuid()) @db.Uuid
+  clientId   String            @map("client_id") @db.Uuid
+  recordedAt DateTime          @default(now()) @map("recorded_at")
+  weightKg   Decimal?          @map("weight_kg") @db.Decimal(5, 2)
+  waistCm    Decimal?          @map("waist_cm") @db.Decimal(5, 2)
+  chestCm    Decimal?          @map("chest_cm") @db.Decimal(5, 2)
+  armsCm     Decimal?          @map("arms_cm") @db.Decimal(5, 2)
+  hipsCm     Decimal?          @map("hips_cm") @db.Decimal(5, 2)
+  thighsCm   Decimal?          @map("thighs_cm") @db.Decimal(5, 2)
+  source     MeasurementSource @default(MANUAL)
+  notes      String?           @db.Text
+  createdAt  DateTime          @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, recordedAt])
+  @@map("body_measurements")
+}
+
+// Separate from ClientProfile (read on every /clients list row) since this
+// is write-once/read-rarely wizard intake data. Step 1 (basic info) writes
+// into Client/ClientProfile directly; steps 2-3 create Goal/BodyMeasurement
+// rows; steps 4-9 live here.
+model ClientOnboarding {
+  id       String @id @default(uuid()) @db.Uuid
+  clientId String @unique @map("client_id") @db.Uuid
+
+  // Step 4: Training experience
+  trainingExperience  TrainingExperience? @map("training_experience")
+  trainingDaysPerWeek Int?                @map("training_days_per_week")
+
+  // Step 5: Equipment
+  equipmentList  String[] @map("equipment_list")
+  equipmentNotes String?  @map("equipment_notes") @db.Text
+
+  // Step 6: Nutrition preferences
+  dietaryPreferences    String[] @map("dietary_preferences")
+  allergies             String[]
+  mealsPerDayPreference Int?     @map("meals_per_day_preference")
+
+  // Step 7: Lifestyle
+  activityLevel  ActivityLevel? @map("activity_level")
+  occupationType String?        @map("occupation_type")
+  stressLevel    Int?           @map("stress_level")
+
+  // Step 8: Sleep baseline (distinct from DailyCheckIn.sleepHours, which is nightly actuals)
+  typicalSleepHours Decimal?      @map("typical_sleep_hours") @db.Decimal(3, 1)
+  sleepQuality      SleepQuality? @map("sleep_quality")
+
+  // Step 9: Medical/safety — a self-attestation, never a diagnosis. Kept
+  // deliberately narrow (training-relevant only) per PRD §11's instruction
+  // not to collect unnecessary sensitive medical information.
+  injuriesOrLimitations String?  @map("injuries_or_limitations") @db.Text
+  clearedForExercise    Boolean? @map("cleared_for_exercise")
+  needsMedicalClearance Boolean  @default(false) @map("needs_medical_clearance")
+
+  // Wizard bookkeeping
+  currentStep Int       @default(1) @map("current_step")
+  completedAt DateTime? @map("completed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("client_onboarding")
+}
+
+// Null coachId = global seeded library entry, usable by every coach.
+// Non-null = a coach's own custom exercise, usable only by that coach.
+model Exercise {
+  id           String        @id @default(uuid()) @db.Uuid
+  coachId      String?       @map("coach_id") @db.Uuid
+  name         String
+  muscleGroup  MuscleGroup   @map("muscle_group")
+  equipment    EquipmentType
+  difficulty   Difficulty
+  instructions String?       @db.Text
+  videoUrl     String?       @map("video_url")
+  imageUrl     String?       @map("image_url")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  coach            Coach?            @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  workoutExercises WorkoutExercise[]
+
+  @@index([muscleGroup])
+  @@index([coachId])
+  @@map("exercises")
+}
+
+model WorkoutPlan {
+  id          String            @id @default(uuid()) @db.Uuid
+  coachId     String            @map("coach_id") @db.Uuid
+  clientId    String            @map("client_id") @db.Uuid
+  name        String
+  description String?           @db.Text
+  status      WorkoutPlanStatus @default(DRAFT)
+  startDate   DateTime?         @map("start_date") @db.Date
+  endDate     DateTime?         @map("end_date") @db.Date
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  coach  Coach        @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  client Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  days   WorkoutDay[]
+
+  @@index([coachId, clientId])
+  @@index([clientId, status])
+  @@map("workout_plans")
+}
+
+model WorkoutDay {
+  id            String   @id @default(uuid()) @db.Uuid
+  workoutPlanId String   @map("workout_plan_id") @db.Uuid
+  label         String
+  order         Int
+  isRestDay     Boolean  @default(false) @map("is_rest_day")
+  // 0(Sun)-6(Sat). Null = no fixed slot — "today" resolution falls back to
+  // "next unlogged day in plan order." No full periodization scheduler here.
+  dayOfWeek     Int?     @map("day_of_week")
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  workoutPlan WorkoutPlan       @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  exercises   WorkoutExercise[]
+  logs        WorkoutLog[]
+
+  @@index([workoutPlanId, order])
+  @@map("workout_days")
+}
+
+model WorkoutExercise {
+  id           String   @id @default(uuid()) @db.Uuid
+  workoutDayId String   @map("workout_day_id") @db.Uuid
+  exerciseId   String   @map("exercise_id") @db.Uuid
+  order        Int
+  sets         Int
+  reps         String // "8-12", "AMRAP", "30s" — a format, not always a plain int
+  weightKg     Decimal? @map("weight_kg") @db.Decimal(6, 2) // null = bodyweight
+  restSeconds  Int?     @map("rest_seconds")
+  tempo        String?
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  workoutDay   WorkoutDay    @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
+  exercise     Exercise      @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  exerciseLogs ExerciseLog[]
+
+  @@index([workoutDayId, order])
+  @@map("workout_exercises")
+}
+
+// A client's actual per-day completion record against an assigned WorkoutDay.
+model WorkoutLog {
+  id           String           @id @default(uuid()) @db.Uuid
+  clientId     String           @map("client_id") @db.Uuid
+  workoutDayId String           @map("workout_day_id") @db.Uuid
+  date         DateTime         @db.Date // calendar date, not a timestamp — avoids TZ ambiguity for "today" lookups
+  status       WorkoutLogStatus @default(NOT_STARTED)
+  completedAt  DateTime?        @map("completed_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  client       Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  workoutDay   WorkoutDay    @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
+  exerciseLogs ExerciseLog[]
+
+  @@unique([clientId, workoutDayId, date])
+  @@index([clientId, date])
+  @@map("workout_logs")
+}
+
+model ExerciseLog {
+  id                String    @id @default(uuid()) @db.Uuid
+  workoutLogId      String    @map("workout_log_id") @db.Uuid
+  workoutExerciseId String    @map("workout_exercise_id") @db.Uuid
+  completed         Boolean   @default(false)
+  actualSets        Int?      @map("actual_sets")
+  actualReps        String?   @map("actual_reps")
+  actualWeightKg    Decimal?  @map("actual_weight_kg") @db.Decimal(6, 2)
+  completedAt       DateTime? @map("completed_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  workoutLog      WorkoutLog      @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  workoutExercise WorkoutExercise @relation(fields: [workoutExerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([workoutLogId, workoutExerciseId])
+  @@map("exercise_logs")
+}
+
+model NutritionPlan {
+  id                 String              @id @default(uuid()) @db.Uuid
+  coachId            String              @map("coach_id") @db.Uuid
+  clientId           String              @map("client_id") @db.Uuid
+  name               String
+  status             NutritionPlanStatus @default(DRAFT)
+  dailyWaterTargetMl Int?                @map("daily_water_target_ml")
+  notes              String?             @db.Text
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  coach  Coach           @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  client Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  meals  NutritionMeal[]
+
+  @@index([coachId, clientId])
+  @@index([clientId, status])
+  @@map("nutrition_plans")
+}
+
+model NutritionMeal {
+  id              String   @id @default(uuid()) @db.Uuid
+  nutritionPlanId String   @map("nutrition_plan_id") @db.Uuid
+  type            MealType
+  order           Int
+  name            String? // custom label — needed since MealType.SNACK can repeat ("Snack 1", "Snack 2")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  nutritionPlan NutritionPlan   @relation(fields: [nutritionPlanId], references: [id], onDelete: Cascade)
+  foods         NutritionFood[]
+
+  @@index([nutritionPlanId, order])
+  @@map("nutrition_meals")
+}
+
+model NutritionFood {
+  id              String   @id @default(uuid()) @db.Uuid
+  nutritionMealId String   @map("nutrition_meal_id") @db.Uuid
+  name            String
+  quantity        String // "150g", "1 cup" — one free-text field for MVP, not split qty+unit
+  calories        Int
+  proteinG        Decimal  @map("protein_g") @db.Decimal(6, 2)
+  carbsG          Decimal  @map("carbs_g") @db.Decimal(6, 2)
+  fatG            Decimal  @map("fat_g") @db.Decimal(6, 2)
+  fiberG          Decimal  @map("fiber_g") @db.Decimal(6, 2)
+  order           Int
+  // Phase 4 AI-fill hook — unused/always false in Phase 2, reserved so
+  // assigning an AI-suggested food never needs a migration later.
+  aiGenerated     Boolean  @default(false) @map("ai_generated")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  nutritionMeal NutritionMeal @relation(fields: [nutritionMealId], references: [id], onDelete: Cascade)
+
+  @@index([nutritionMealId, order])
+  @@map("nutrition_foods")
+}
+
+model DailyCheckIn {
+  id                 String          @id @default(uuid()) @db.Uuid
+  clientId           String          @map("client_id") @db.Uuid
+  date               DateTime        @db.Date
+  weightKg           Decimal?        @map("weight_kg") @db.Decimal(5, 2)
+  workoutCompleted   Boolean?        @map("workout_completed")
+  steps              Int?
+  sleepHours         Decimal?        @map("sleep_hours") @db.Decimal(3, 1)
+  mood               MoodLevel?
+  energy             EnergyLevel?
+  nutritionAdherence AdherenceLevel? @map("nutrition_adherence")
+  notes              String?         @db.Text
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, date])
+  @@index([clientId, date])
+  @@map("daily_checkins")
 }

@@ -12,26 +12,62 @@ import { uuidParamSchema, uuidNestedParamSchema } from '../schemas/common.schema
 
 const router = Router();
 
-router.use(authenticate, requireRole('COACH'));
+// Phase 2 mounts mixed-role sub-resources (a client reading/writing their own
+// workout/nutrition/check-in data) on this same router, so the gate can only
+// authenticate here — each Phase 1 route below now states its own
+// requireRole('COACH') explicitly, preserving identical behavior.
+router.use(authenticate);
 
-router.get('/', validate(listClientsQuerySchema, 'query'), clientsController.list);
-router.post('/', csrfProtection, validate(createClientSchema), clientsController.create);
+router.get('/', requireRole('COACH'), validate(listClientsQuerySchema, 'query'), clientsController.list);
+router.post('/', requireRole('COACH'), csrfProtection, validate(createClientSchema), clientsController.create);
 
-router.get('/:id', validate(uuidParamSchema, 'params'), requireClientOwnership, clientsController.getById);
-router.patch('/:id', csrfProtection, validate(uuidParamSchema, 'params'), requireClientOwnership, validate(updateClientSchema), clientsController.update);
-router.delete('/:id', csrfProtection, validate(uuidParamSchema, 'params'), requireClientOwnership, clientsController.archive);
-router.post('/:id/unarchive', csrfProtection, validate(uuidParamSchema, 'params'), requireClientOwnership, clientsController.unarchive);
+router.get('/:id', requireRole('COACH'), validate(uuidParamSchema, 'params'), requireClientOwnership, clientsController.getById);
+router.patch(
+  '/:id',
+  requireRole('COACH'),
+  csrfProtection,
+  validate(uuidParamSchema, 'params'),
+  requireClientOwnership,
+  validate(updateClientSchema),
+  clientsController.update,
+);
+router.delete('/:id', requireRole('COACH'), csrfProtection, validate(uuidParamSchema, 'params'), requireClientOwnership, clientsController.archive);
+router.post(
+  '/:id/unarchive',
+  requireRole('COACH'),
+  csrfProtection,
+  validate(uuidParamSchema, 'params'),
+  requireClientOwnership,
+  clientsController.unarchive,
+);
+router.post('/:id/invite', requireRole('COACH'), csrfProtection, validate(uuidParamSchema, 'params'), requireClientOwnership, clientsController.invite);
 
-router.get('/:id/notes', validate(uuidParamSchema, 'params'), requireClientOwnership, notesController.list);
-router.post('/:id/notes', csrfProtection, validate(uuidParamSchema, 'params'), requireClientOwnership, validate(createNoteSchema), notesController.create);
+router.get('/:id/notes', requireRole('COACH'), validate(uuidParamSchema, 'params'), requireClientOwnership, notesController.list);
+router.post(
+  '/:id/notes',
+  requireRole('COACH'),
+  csrfProtection,
+  validate(uuidParamSchema, 'params'),
+  requireClientOwnership,
+  validate(createNoteSchema),
+  notesController.create,
+);
 router.patch(
   '/:id/notes/:noteId',
+  requireRole('COACH'),
   csrfProtection,
   validate(uuidNestedParamSchema, 'params'),
   requireClientOwnership,
   validate(updateNoteSchema),
   notesController.update,
 );
-router.delete('/:id/notes/:noteId', csrfProtection, validate(uuidNestedParamSchema, 'params'), requireClientOwnership, notesController.remove);
+router.delete(
+  '/:id/notes/:noteId',
+  requireRole('COACH'),
+  csrfProtection,
+  validate(uuidNestedParamSchema, 'params'),
+  requireClientOwnership,
+  notesController.remove,
+);
 
 export default router;

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const passwordSchema = z
+export const passwordSchema = z
   .string()
   .min(10, 'Password must be at least 10 characters')
   .regex(/[a-z]/, 'Password must include a lowercase letter')
@@ -33,4 +33,12 @@ export const resetPasswordSchema = z.object({
 
 export const sessionParamSchema = z.object({
   sessionId: z.string().uuid(),
+});
+
+export const inviteTokenParamSchema = z.object({
+  token: z.string().min(1),
+});
+
+export const acceptInviteSchema = z.object({
+  password: passwordSchema,
 });

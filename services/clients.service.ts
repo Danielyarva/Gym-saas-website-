@@ -66,4 +66,8 @@ export const clientsService = {
   unarchive(id: string) {
     return apiRequest<null>(`/api/clients/${id}/unarchive`, { method: 'POST' });
   },
+
+  invite(id: string) {
+    return apiRequest<{ invitedAt: string; expiresAt: string }>(`/api/clients/${id}/invite`, { method: 'POST' });
+  },
 };

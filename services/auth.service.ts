@@ -1,18 +1,29 @@
 import { apiRequest } from './api-client';
-import type { PublicCoach, PublicUser, Session } from '@/types';
+import type { InvitePreview, PublicClient, PublicCoach, PublicUser, Session } from '@/types';
 
 interface MeResponse {
   user: PublicUser;
   coach: PublicCoach | null;
+  client: PublicClient | null;
+}
+
+interface CoachAuthResponse {
+  user: PublicUser;
+  coach: PublicCoach | null;
+}
+
+interface AcceptInviteResponse {
+  user: PublicUser;
+  client: PublicClient | null;
 }
 
 export const authService = {
   register(input: { fullName: string; email: string; password: string }) {
-    return apiRequest<MeResponse>('/api/auth/register', { method: 'POST', body: input });
+    return apiRequest<CoachAuthResponse>('/api/auth/register', { method: 'POST', body: input });
   },
 
   login(input: { email: string; password: string }) {
-    return apiRequest<MeResponse>('/api/auth/login', { method: 'POST', body: input });
+    return apiRequest<CoachAuthResponse>('/api/auth/login', { method: 'POST', body: input });
   },
 
   logout() {
@@ -37,5 +48,13 @@ export const authService = {
 
   sessions() {
     return apiRequest<Session[]>('/api/auth/sessions');
+  },
+
+  getInvitePreview(token: string) {
+    return apiRequest<InvitePreview>(`/api/auth/invite/${token}`);
+  },
+
+  acceptInvite(token: string, password: string) {
+    return apiRequest<AcceptInviteResponse>(`/api/auth/invite/${token}/accept`, { method: 'POST', body: { password } });
   },
 };

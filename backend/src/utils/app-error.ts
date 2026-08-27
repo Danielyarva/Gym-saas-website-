@@ -9,7 +9,11 @@ export type ErrorCode =
   | 'NOT_FOUND'
   | 'EMAIL_ALREADY_EXISTS'
   | 'RATE_LIMITED'
-  | 'INTERNAL_ERROR';
+  | 'INTERNAL_ERROR'
+  | 'INVITE_INVALID'
+  | 'INVITE_EXPIRED'
+  | 'CLIENT_ALREADY_LINKED'
+  | 'PLAN_NOT_ACTIVE';
 
 const STATUS_BY_CODE: Record<ErrorCode, number> = {
   VALIDATION_ERROR: 400,
@@ -23,6 +27,10 @@ const STATUS_BY_CODE: Record<ErrorCode, number> = {
   EMAIL_ALREADY_EXISTS: 409,
   RATE_LIMITED: 429,
   INTERNAL_ERROR: 500,
+  INVITE_INVALID: 404,
+  INVITE_EXPIRED: 410,
+  CLIENT_ALREADY_LINKED: 409,
+  PLAN_NOT_ACTIVE: 404,
 };
 
 export class AppError extends Error {

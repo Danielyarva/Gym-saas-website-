@@ -11,6 +11,8 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   sessionParamSchema,
+  inviteTokenParamSchema,
+  acceptInviteSchema,
 } from '../schemas/auth.schema';
 
 const router = Router();
@@ -30,5 +32,14 @@ router.post('/reset-password', authRateLimiter, validate(resetPasswordSchema), a
 
 router.get('/sessions', authenticate, authController.listSessions);
 router.delete('/sessions/:sessionId', authenticate, csrfProtection, validate(sessionParamSchema, 'params'), authController.revokeSession);
+
+router.get('/invite/:token', authRateLimiter, validate(inviteTokenParamSchema, 'params'), authController.getInvite);
+router.post(
+  '/invite/:token/accept',
+  authRateLimiter,
+  validate(inviteTokenParamSchema, 'params'),
+  validate(acceptInviteSchema),
+  authController.acceptInvite,
+);
 
 export default router;

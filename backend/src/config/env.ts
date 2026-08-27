@@ -16,6 +16,7 @@ const envSchema = z.object({
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
   EMAIL_VERIFICATION_TTL_HOURS: z.coerce.number().int().positive().default(24),
   PASSWORD_RESET_TTL_HOURS: z.coerce.number().int().positive().default(1),
+  CLIENT_INVITE_TTL_HOURS: z.coerce.number().int().positive().default(168),
 
   ARGON2_MEMORY_COST_KIB: z.coerce.number().int().positive().default(19456),
   ARGON2_TIME_COST: z.coerce.number().int().positive().default(2),

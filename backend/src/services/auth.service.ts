@@ -2,8 +2,10 @@ import type { Request } from 'express';
 import { env } from '../config/env';
 import { userRepository } from '../repositories/user.repository';
 import { coachRepository } from '../repositories/coach.repository';
+import { clientRepository } from '../repositories/client.repository';
 import { refreshTokenRepository } from '../repositories/refresh-token.repository';
 import { emailVerificationTokenRepository, passwordResetTokenRepository } from '../repositories/verification-token.repository';
+import { clientInviteTokenRepository } from '../repositories/client-invite-token.repository';
 import { passwordService } from './password.service';
 import { tokenService } from './token.service';
 import { emailService } from './email.service';
@@ -107,7 +109,8 @@ async function getMe(userId: string) {
   if (!user) throw new AppError('UNAUTHORIZED', 'Authentication required');
 
   const coach = user.role === 'COACH' ? await coachRepository.findByUserId(user.id) : null;
-  return { user, coach };
+  const client = user.role === 'CLIENT' ? await clientRepository.findByUserId(user.id) : null;
+  return { user, coach, client };
 }
 
 async function verifyEmail(rawToken: string) {
@@ -162,6 +165,47 @@ async function resetPassword(rawToken: string, newPassword: string, req: Request
   await auditService.log({ req, actorUserId: record.userId, action: 'PASSWORD_RESET_COMPLETED' });
 }
 
+async function getInvitePreview(rawToken: string) {
+  const record = await clientInviteTokenRepository.findByTokenHash(hashToken(rawToken));
+
+  if (!record || record.usedAt) {
+    throw new AppError('INVITE_INVALID', 'This invite link is invalid or has already been used');
+  }
+  if (record.expiresAt < new Date()) {
+    throw new AppError('INVITE_EXPIRED', 'This invite link has expired. Ask your coach to send a new one.');
+  }
+
+  return { clientFullName: record.client.fullName, email: record.client.email, expiresAt: record.expiresAt };
+}
+
+async function acceptInvite(rawToken: string, password: string, req: Request) {
+  const record = await clientInviteTokenRepository.findByTokenHash(hashToken(rawToken));
+
+  if (!record || record.usedAt) {
+    throw new AppError('INVITE_INVALID', 'This invite link is invalid or has already been used');
+  }
+  if (record.expiresAt < new Date()) {
+    throw new AppError('INVITE_EXPIRED', 'This invite link has expired. Ask your coach to send a new one.');
+  }
+  if (record.client.userId) {
+    throw new AppError('CLIENT_ALREADY_LINKED', 'This client already has an account. Please log in instead.');
+  }
+
+  const passwordHash = await passwordService.hash(password);
+  const createdUser = await userRepository.create({ email: record.client.email, passwordHash, role: 'CLIENT' });
+  // Invite-provisioned accounts are treated as pre-verified: the client only
+  // received this link because their coach sent it to the email already on
+  // file, which is a stronger signal than the open self-registration flow.
+  const user = await userRepository.markEmailVerified(createdUser.id);
+  await clientRepository.linkUserAccount(record.clientId, user.id);
+  await clientInviteTokenRepository.markUsed(record.id);
+  await auditService.log({ req, actorUserId: user.id, action: 'CLIENT_INVITE_ACCEPTED', entityType: 'CLIENT', entityId: record.clientId });
+
+  const client = await clientRepository.findByUserId(user.id);
+  const tokens = await issueSessionTokens(user.id, user.role, user.email, req);
+  return { user, client, ...tokens };
+}
+
 function listSessions(userId: string) {
   return refreshTokenRepository.listActiveForUser(userId);
 }
@@ -187,4 +231,6 @@ export const authService = {
   resetPassword,
   listSessions,
   revokeSession,
+  getInvitePreview,
+  acceptInvite,
 };

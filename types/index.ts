@@ -15,6 +15,18 @@ export interface PublicCoach {
   avatarUrl: string | null;
 }
 
+export interface PublicClient {
+  id: string;
+  fullName: string;
+  email: string;
+}
+
+export interface InvitePreview {
+  clientFullName: string;
+  email: string;
+  expiresAt: string;
+}
+
 export interface Session {
   id: string;
   userAgent: string | null;
@@ -78,6 +90,7 @@ export interface ClientDetail {
   fullName: string;
   email: string;
   phone: string | null;
+  hasAccount: boolean;
   status: ClientStatus;
   adherencePct: number | null;
   progressPct: number | null;

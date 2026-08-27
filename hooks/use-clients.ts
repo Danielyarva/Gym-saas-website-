@@ -66,3 +66,9 @@ export function useUnarchiveClient() {
     },
   });
 }
+
+export function useInviteClient(id: string) {
+  return useMutation({
+    mutationFn: () => clientsService.invite(id),
+  });
+}

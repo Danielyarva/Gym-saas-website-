@@ -42,6 +42,10 @@ function passwordResetEmailHtml(resetUrl: string): string {
   return `<p>We received a request to reset your AI Coach OS password. This link expires in ${env.PASSWORD_RESET_TTL_HOURS} hour(s):</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you didn't request this, you can safely ignore this email.</p>`;
 }
 
+function clientInviteEmailHtml(coachFullName: string, inviteUrl: string): string {
+  return `<p>${coachFullName} has invited you to AI Coach OS to track your training, nutrition, and progress together.</p><p>Set up your account to get started:</p><p><a href="${inviteUrl}">${inviteUrl}</a></p><p>This link expires in ${env.CLIENT_INVITE_TTL_HOURS} hours.</p>`;
+}
+
 export const emailService = {
   sendVerificationEmail(to: string, rawToken: string) {
     const verifyUrl = `${env.FRONTEND_URL}/verify-email?token=${rawToken}`;
@@ -51,5 +55,10 @@ export const emailService = {
   sendPasswordResetEmail(to: string, rawToken: string) {
     const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${rawToken}`;
     return send({ to, subject: 'Reset your password — AI Coach OS', html: passwordResetEmailHtml(resetUrl) });
+  },
+
+  sendClientInviteEmail(to: string, coachFullName: string, rawToken: string) {
+    const inviteUrl = `${env.FRONTEND_URL}/invite?token=${rawToken}`;
+    return send({ to, subject: `${coachFullName} invited you to AI Coach OS`, html: clientInviteEmailHtml(coachFullName, inviteUrl) });
   },
 };

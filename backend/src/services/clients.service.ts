@@ -1,7 +1,12 @@
 import type { Client, ClientProfile, CoachClient } from '@prisma/client';
 import { clientRepository, type ListClientsFilters, type CreateClientInput, type UpdateClientInput } from '../repositories/client.repository';
 import { userRepository } from '../repositories/user.repository';
+import { coachRepository } from '../repositories/coach.repository';
+import { clientInviteTokenRepository } from '../repositories/client-invite-token.repository';
+import { emailService } from './email.service';
 import { auditService } from './audit.service';
+import { env } from '../config/env';
+import { generateRawToken, hashToken } from '../utils/crypto';
 import { AppError } from '../utils/app-error';
 import type { Request } from 'express';
 
@@ -37,6 +42,7 @@ function toClientDetail(coachClient: CoachClient & { client: ClientWithProfile }
     fullName: client.fullName,
     email: client.email,
     phone: client.phone,
+    hasAccount: client.userId !== null,
     status: coachClient.status,
     adherencePct: coachClient.adherencePct,
     progressPct: coachClient.progressPct,
@@ -130,6 +136,29 @@ async function unarchive(coachId: string, clientId: string, req: Request) {
   await auditService.log({ req, actorUserId: req.user?.id, action: 'CLIENT_UNARCHIVED', entityType: 'CLIENT', entityId: clientId });
 }
 
+async function invite(coachId: string, clientId: string, req: Request) {
+  const coachClient = await clientRepository.findById(coachId, clientId);
+  if (!coachClient) throw new AppError('NOT_FOUND', 'Client not found');
+  if (coachClient.client.userId) {
+    throw new AppError('CLIENT_ALREADY_LINKED', 'This client already has an account');
+  }
+
+  const coach = await coachRepository.findById(coachId);
+  const rawToken = generateRawToken();
+  const expiresAt = new Date(Date.now() + env.CLIENT_INVITE_TTL_HOURS * 60 * 60 * 1000);
+
+  await clientInviteTokenRepository.create({
+    clientId,
+    invitedByCoachId: coachId,
+    tokenHash: hashToken(rawToken),
+    expiresAt,
+  });
+  void emailService.sendClientInviteEmail(coachClient.client.email, coach!.fullName, rawToken);
+  await auditService.log({ req, actorUserId: req.user?.id, action: 'CLIENT_INVITED', entityType: 'CLIENT', entityId: clientId });
+
+  return { invitedAt: new Date(), expiresAt };
+}
+
 export const clientsService = {
   list,
   getById,
@@ -137,4 +166,5 @@ export const clientsService = {
   update,
   archive,
   unarchive,
+  invite,
 };
