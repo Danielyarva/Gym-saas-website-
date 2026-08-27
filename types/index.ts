@@ -162,6 +162,79 @@ export interface OnboardingState {
   completedAt: string | null;
 }
 
+export type WorkoutPlanStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+export type MuscleGroup = 'CHEST' | 'BACK' | 'SHOULDERS' | 'BICEPS' | 'TRICEPS' | 'LEGS' | 'GLUTES' | 'CORE' | 'CARDIO' | 'FULL_BODY' | 'OTHER';
+export type EquipmentType = 'BARBELL' | 'DUMBBELL' | 'MACHINE' | 'CABLE' | 'BODYWEIGHT' | 'KETTLEBELL' | 'BAND' | 'OTHER';
+export type Difficulty = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+export type WorkoutLogStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED';
+
+export interface Exercise {
+  id: string;
+  coachId: string | null;
+  name: string;
+  muscleGroup: MuscleGroup;
+  equipment: EquipmentType;
+  difficulty: Difficulty;
+  instructions: string | null;
+  videoUrl: string | null;
+  imageUrl: string | null;
+}
+
+export interface WorkoutExerciseDetail {
+  id: string;
+  order: number;
+  sets: number;
+  reps: string;
+  weightKg: number | null;
+  restSeconds: number | null;
+  tempo: string | null;
+  notes: string | null;
+  exercise: Exercise;
+}
+
+export interface WorkoutDayDetail {
+  id: string;
+  label: string;
+  order: number;
+  isRestDay: boolean;
+  dayOfWeek: number | null;
+  notes: string | null;
+  exercises: WorkoutExerciseDetail[];
+}
+
+export interface WorkoutPlanSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  status: WorkoutPlanStatus;
+  startDate: string | null;
+  endDate: string | null;
+  createdAt: string;
+}
+
+export interface WorkoutPlanDetail extends WorkoutPlanSummary {
+  days: WorkoutDayDetail[];
+}
+
+export interface TodayWorkoutExercise {
+  id: string;
+  order: number;
+  sets: number;
+  reps: string;
+  weightKg: number | null;
+  restSeconds: number | null;
+  tempo: string | null;
+  notes: string | null;
+  exercise: Exercise;
+  log: { id: string; completed: boolean; actualSets: number | null; actualReps: string | null; actualWeightKg: number | null } | null;
+}
+
+export interface TodayWorkout {
+  plan: { id: string; name: string };
+  day: { id: string; label: string; notes: string | null; exercises: TodayWorkoutExercise[] } | null;
+  log: { id: string; status: WorkoutLogStatus; date: string } | null;
+}
+
 export interface ApiErrorBody {
   success: false;
   error: {
