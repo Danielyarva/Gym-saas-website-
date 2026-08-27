@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+enum Role {
+  COACH
+  CLIENT
+  ADMIN
+}
+
+enum ClientStatus {
+  ON_TRACK
+  NEEDS_ATTENTION
+  AT_RISK
+  INACTIVE
+}
+
+enum AuditAction {
+  USER_REGISTERED
+  USER_LOGIN
+  USER_LOGOUT
+  USER_LOGOUT_ALL
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+  EMAIL_VERIFIED
+  CLIENT_CREATED
+  CLIENT_ARCHIVED
+  CLIENT_UNARCHIVED
+  CLIENT_STATUS_CHANGED
+  CLIENT_NOTE_ADDED
+  CLIENT_NOTE_UPDATED
+  CLIENT_NOTE_DELETED
+}
+
+model User {
+  id              String    @id @default(uuid()) @db.Uuid
+  email           String    @unique
+  passwordHash    String    @map("password_hash")
+  role            Role
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  isActive        Boolean   @default(true) @map("is_active")
+  lastLoginAt     DateTime? @map("last_login_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  coach                   Coach?
+  client                  Client?
+  refreshTokens           RefreshToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+  auditLogs               AuditLog[]              @relation("AuditActor")
+
+  @@map("users")
+}
+
+model Coach {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @unique @map("user_id") @db.Uuid
+  fullName     String   @map("full_name")
+  businessName String?  @map("business_name")
+  phone        String?
+  avatarUrl    String?  @map("avatar_url")
+  timezone     String   @default("UTC")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coachClients CoachClient[]
+  clientNotes  ClientNote[]
+
+  @@map("coaches")
+}
+
+model Client {
+  id        String   @id @default(uuid()) @db.Uuid
+  // Nullable: a coach can add a client as a roster record before that person
+  // ever logs in. Populated once the Phase 2 onboarding invite flow links a
+  // User to this Client — no migration needed when that ships.
+  userId    String?  @unique @map("user_id") @db.Uuid
+  fullName  String   @map("full_name")
+  email     String   @unique
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user        User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  profile     ClientProfile?
+  coachClient CoachClient?
+  notes       ClientNote[]
+
+  @@map("clients")
+}
+
+model CoachClient {
+  id      String @id @default(uuid()) @db.Uuid
+  coachId String @map("coach_id") @db.Uuid
+  // Unique: Phase 1 supports exactly one coach per client. Also the DB-level
+  // backstop for "a coach can only access their own clients" — every query
+  // for a client goes through this row, scoped by coachId.
+  clientId String @unique @map("client_id") @db.Uuid
+
+  status ClientStatus @default(ON_TRACK)
+
+  // Null = no data yet. Populated starting Phase 2 (check-ins) and Phase 4
+  // (AI analysis). The API surfaces null as null, never a misleading 0.
+  adherencePct  Int?      @map("adherence_pct")
+  progressPct   Int?      @map("progress_pct")
+  lastCheckInAt DateTime? @map("last_check_in_at")
+
+  // Soft delete for "Archive client" — distinct from `status`, which tracks
+  // engagement health while a client is still active on the roster.
+  archivedAt DateTime? @map("archived_at")
+  assignedAt DateTime  @default(now()) @map("assigned_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  coach  Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([coachId, status])
+  @@index([coachId, archivedAt])
+  @@map("coach_clients")
+}
+
+model ClientProfile {
+  id       String @id @default(uuid()) @db.Uuid
+  clientId String @unique @map("client_id") @db.Uuid
+
+  avatarUrl   String?   @map("avatar_url")
+  dateOfBirth DateTime? @map("date_of_birth") @db.Date
+  gender      String?
+  heightCm    Decimal?  @map("height_cm") @db.Decimal(5, 2)
+
+  // Weight lives here (not gated behind check-in history) because the
+  // dashboard and /clients list need starting/current/goal weight from day
+  // one; check-in-driven weight history is a Phase 2 addition on top.
+  startingWeightKg Decimal? @map("starting_weight_kg") @db.Decimal(5, 2)
+  currentWeightKg  Decimal? @map("current_weight_kg") @db.Decimal(5, 2)
+  goalWeightKg     Decimal? @map("goal_weight_kg") @db.Decimal(5, 2)
+  goalText         String?  @map("goal_text")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("client_profiles")
+}
+
+model ClientNote {
+  id        String   @id @default(uuid()) @db.Uuid
+  clientId  String   @map("client_id") @db.Uuid
+  coachId   String   @map("coach_id") @db.Uuid
+  body      String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  coach  Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@map("client_notes")
+}
+
+model RefreshToken {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  // Only the SHA-256 hash is stored — the raw token lives only in the cookie.
+  tokenHash String @unique @map("token_hash")
+
+  // Rotated (not deleted) tokens keep revokedAt set so a replay of an
+  // already-used token can be detected (theft signal) instead of just failing.
+  revokedAt           DateTime? @map("revoked_at")
+  replacedByTokenHash String?   @map("replaced_by_token_hash")
+
+  userAgent String?  @map("user_agent")
+  ipAddress String?  @map("ip_address")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model AuditLog {
+  id          String      @id @default(uuid()) @db.Uuid
+  actorUserId String?     @map("actor_user_id") @db.Uuid
+  action      AuditAction
+  entityType  String?     @map("entity_type")
+  entityId    String?     @map("entity_id") @db.Uuid
+  metadata    Json?
+  ipAddress   String?     @map("ip_address")
+  userAgent   String?     @map("user_agent")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  actor User? @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
