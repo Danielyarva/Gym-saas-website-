@@ -35,7 +35,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Messages', href: '/messages', icon: Mail },
   { label: 'Notifications', href: '/notifications', icon: Bell },
   { label: 'Subscription', href: '/subscription', icon: CreditCard },
-  { label: 'Settings', href: '/settings', icon: Settings, comingSoon: true },
+  { label: 'Settings', href: '/settings', icon: Settings },
   { label: 'Help & Support', href: '/help', icon: HelpCircle, comingSoon: true },
 ];
 

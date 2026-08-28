@@ -4,9 +4,13 @@
 /*
  * AI Coach OS design system (PRD §2): a premium, practical dark UI —
  * near-black background, dark charcoal cards, gold/yellow primary accent,
- * green/amber/red status colors. This is the app's only theme (no light
- * mode toggle in Phase 1), so tokens are set directly on :root rather than
- * gated behind prefers-color-scheme.
+ * green/amber/red status colors. Dark is the unconditional default on
+ * :root (unchanged for every existing session). Light mode (Settings →
+ * Appearance) is opt-in via a `.light` class on <html> that overrides the
+ * same custom properties below — no component reads Tailwind's `dark:`
+ * variant anywhere, every component already reads these semantic tokens
+ * (bg-background, text-foreground, etc.), so a `.light` override re-themes
+ * the whole app with zero per-component changes.
  */
 :root {
   --radius: 0.75rem;
@@ -44,6 +48,57 @@
   --border: #2a2a2e;
   --input: #2a2a2e;
   --ring: #eab308;
+}
+
+/*
+ * Light mode (PRD §2's "Light mode" addendum), opt-in via `.light` on
+ * <html> (set by the inline script in app/layout.tsx before first paint —
+ * see that file's comment). Accent/status colors are darkened one or two
+ * shades from their dark-mode values, not reused as-is: --primary in
+ * particular renders as real text/link color (button.tsx's `link` variant,
+ * onboarding-stepper.tsx's step label), not just a fill, so it has to clear
+ * WCAG AA (4.5:1) against this background — the dark-mode gold (#eab308)
+ * only manages ~1.84:1 on #fafafa. Ratios verified against #fafafa:
+ * primary #a16207 4.71:1, success #15803d 4.80:1, warning #b45309 4.81:1,
+ * destructive #dc2626 4.62:1. --destructive-foreground is pure white here
+ * (not the dark-mode #fef2f2) since #fef2f2-on-#dc2626 is 4.415:1 — just
+ * under AA for the destructive button variant/unread badge fill; pure
+ * white on the same fill clears 4.83:1.
+ */
+.light {
+  --background: #fafafa;
+  --foreground: #18181b;
+
+  --card: #ffffff;
+  --card-foreground: #18181b;
+
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+
+  --primary: #a16207;
+  --primary-foreground: #fffbeb;
+
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+
+  --accent: #e4e4e7;
+  --accent-foreground: #18181b;
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --success: #15803d;
+  --success-foreground: #f0fdf4;
+
+  --warning: #b45309;
+  --warning-foreground: #fffbeb;
+
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #a16207;
 }
 
 @theme inline {

@@ -76,6 +76,19 @@ Avoid excessive gradients.
 
 The design must remain practical and readable.
 
+Light mode (added for the Settings → Appearance toggle — not part of the original spec above, which only ever described dark):
+
+- Background: #fafafa
+- Cards/popovers: #ffffff
+- Primary accent: #a16207 (darkened from the dark-mode gold; #eab308 itself fails text contrast on a light background)
+- Positive: #15803d
+- Warning: #b45309
+- Danger: #dc2626
+- Text: #18181b
+- Secondary text: #71717a
+
+All accent and status colors verified at 4.6:1 or better against the light background (WCAG AA for normal text). Dark stays the default for every account unless the user opts into light.
+
 ---
 
 ## 3. Responsive Navigation
@@ -807,6 +820,7 @@ Client Preferences
 Subscription
 Billing
 Help & Support
+Appearance (dark/light mode toggle)
 
 ---
 

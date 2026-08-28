@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { LogOut, Settings, HelpCircle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -33,8 +34,10 @@ export function UserMenu() {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel className="truncate">{displayName}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled className="opacity-50">
-          <Settings className="h-4 w-4" /> Settings
+        <DropdownMenuItem asChild>
+          <Link href="/settings">
+            <Settings className="h-4 w-4" /> Settings
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem disabled className="opacity-50">
           <HelpCircle className="h-4 w-4" /> Help &amp; Support
