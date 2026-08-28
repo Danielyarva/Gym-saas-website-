@@ -5,23 +5,29 @@ interface SendEmailInput {
   to: string;
   subject: string;
   html: string;
+  /**
+   * Verification/password-reset/invite emails stay direct fire-and-forget
+   * (register/forgot-password/invite must never block or fail on a slow or
+   * failing provider), so those keep the default of swallowing the error.
+   * The three emails queued through email.processor.ts (Phase 7) set this
+   * so a real send failure throws instead — that's what lets BullMQ's
+   * attempts/backoff (jobs/queues.ts) actually retry them.
+   */
+  throwOnFailure?: boolean;
 }
 
 /**
- * Phase 1 has no job queue (BullMQ is Phase 7), so sends are fire-and-forget:
- * a slow or failing email provider must never block or fail the HTTP
- * response for register/forgot-password. Failures are logged, not thrown.
- * With no EMAIL_API_KEY configured (local dev), emails are logged instead
- * of sent so the flow is testable without a real provider.
+ * With no EMAIL_API_KEY configured (local dev/this sandbox), emails are
+ * logged instead of sent so the flow is testable without a real provider.
  */
-async function send({ to, subject, html }: SendEmailInput): Promise<void> {
+async function send({ to, subject, html, throwOnFailure = false }: SendEmailInput): Promise<void> {
   if (!env.EMAIL_API_KEY) {
     logger.info({ to, subject, html }, 'EMAIL_API_KEY not set — logging email instead of sending');
     return;
   }
 
   try {
-    await fetch('https://api.resend.com/emails', {
+    const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${env.EMAIL_API_KEY}`,
@@ -29,8 +35,12 @@ async function send({ to, subject, html }: SendEmailInput): Promise<void> {
       },
       body: JSON.stringify({ from: env.EMAIL_FROM, to, subject, html }),
     });
+    if (!res.ok) {
+      throw new Error(`Email provider responded ${res.status}`);
+    }
   } catch (err) {
     logger.error({ err, to, subject }, 'Failed to send email');
+    if (throwOnFailure) throw err;
   }
 }
 
@@ -75,15 +85,28 @@ export const emailService = {
     return send({ to, subject: `${coachFullName} invited you to AI Coach OS`, html: clientInviteEmailHtml(coachFullName, inviteUrl) });
   },
 
+  // These three are called only from email.processor.ts (Phase 7's email
+  // queue), never directly fire-and-forget — throwOnFailure lets a real
+  // send failure surface to BullMQ so the job actually retries.
   sendNewMessageEmail(to: string, senderName: string, threadUrl: string) {
-    return send({ to, subject: `${senderName} sent you a message — AI Coach OS`, html: newMessageEmailHtml(senderName, threadUrl) });
+    return send({ to, subject: `${senderName} sent you a message — AI Coach OS`, html: newMessageEmailHtml(senderName, threadUrl), throwOnFailure: true });
   },
 
   sendAtRiskAlertEmail(to: string, clientFullName: string, clientUrl: string) {
-    return send({ to, subject: `${clientFullName} may need attention — AI Coach OS`, html: atRiskAlertEmailHtml(clientFullName, clientUrl) });
+    return send({
+      to,
+      subject: `${clientFullName} may need attention — AI Coach OS`,
+      html: atRiskAlertEmailHtml(clientFullName, clientUrl),
+      throwOnFailure: true,
+    });
   },
 
   sendPaymentReceiptEmail(to: string, planLabel: string, amountInPaise: number, currency: string) {
-    return send({ to, subject: `Payment receipt — ${planLabel} plan — AI Coach OS`, html: paymentReceiptEmailHtml(planLabel, amountInPaise, currency) });
+    return send({
+      to,
+      subject: `Payment receipt — ${planLabel} plan — AI Coach OS`,
+      html: paymentReceiptEmailHtml(planLabel, amountInPaise, currency),
+      throwOnFailure: true,
+    });
   },
 };

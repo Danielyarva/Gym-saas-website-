@@ -38,14 +38,12 @@ jest.mock('../src/ai', () => ({
 import { emailService } from '../src/services/email.service';
 import { createApp } from '../src/app';
 import { prisma } from '../src/config/prisma';
+import { aiAnalysisQueue } from '../src/jobs/queues';
 import { resetDatabase, extractCookie } from './helpers';
+import { waitForQueueIdle } from './queue-helpers';
 
 const app = createApp();
 const sendClientInviteEmailMock = emailService.sendClientInviteEmail as jest.Mock;
-
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function registerCoach(email: string, fullName: string) {
   const agent = request.agent(app);
@@ -140,8 +138,8 @@ describe('AI insights', () => {
       .send({ workoutCompleted: false, steps: 3000 });
     expect(submitRes.status).toBe(200);
 
-    // analyzeCheckIn runs fire-and-forget after the check-in response — give it a beat to complete.
-    await wait(200);
+    // analyzeCheckIn runs via aiAnalysisQueue after the check-in response — wait for the real worker to finish it.
+    await waitForQueueIdle(aiAnalysisQueue);
 
     const insightsRes = await client.agent.get(`/api/clients/${client.clientId}/ai/insights`);
     expect(insightsRes.status).toBe(200);

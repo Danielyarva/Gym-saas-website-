@@ -9,6 +9,7 @@ import { aiService } from '../ai';
 import { AI_MODELS } from '../ai/models';
 import { auditService } from './audit.service';
 import { notificationService } from './notification.service';
+import { weeklyReportQueue } from '../jobs/queues';
 import { todayDateOnly, dateOnly, subtractDays } from '../utils/date';
 
 const MAX_OUTPUT_TOKENS = 1536;
@@ -116,7 +117,7 @@ Computed metrics for this week:
 - Overall progress toward goal: ${metrics.overallProgressPct ?? 'no data'}%`;
 }
 
-async function generate(clientId: string, weekStartInput: Date | undefined, req: Request) {
+async function generate(clientId: string, weekStartInput: Date | undefined, req?: Request) {
   const { weekStart, weekEnd } = weekStartInput
     ? { weekStart: mondayOf(weekStartInput), weekEnd: subtractDays(mondayOf(weekStartInput), -6) }
     : mostRecentCompletedWeek(todayDateOnly());
@@ -144,7 +145,7 @@ ${context}`;
 
   await auditService.log({
     req,
-    actorUserId: req.user?.id,
+    actorUserId: req?.user?.id,
     action: 'AI_WEEKLY_REPORT_GENERATED',
     entityType: 'CLIENT',
     entityId: clientId,
@@ -154,6 +155,19 @@ ${context}`;
   await notificationService.notifyWeeklyReport(clientId);
 
   return toPublicReport(report);
+}
+
+/**
+ * The weekly repeatable job's fan-out (worker.ts, PRD §19's literal "every
+ * week generate" — deferred since Phase 4 for lack of a job queue). Reuses
+ * 100% of `generate`'s existing metrics + AI-narrative logic per client;
+ * skips clients with no check-in data for the week rather than generating a
+ * meaningless empty report.
+ */
+async function generateForAllActiveClients(): Promise<void> {
+  const { weekStart, weekEnd } = mostRecentCompletedWeek(todayDateOnly());
+  const clients = await clientRepository.listActiveWithCheckInsInRange(weekStart, weekEnd);
+  await Promise.all(clients.map((client) => weeklyReportQueue.add('generate-one', { clientId: client.id })));
 }
 
 async function list(clientId: string, page: number, pageSize: number) {
@@ -173,6 +187,7 @@ async function listForCoach(coachId: string, page: number, pageSize: number) {
 
 export const weeklyReportService = {
   generate,
+  generateForAllActiveClients,
   list,
   listForCoach,
 };

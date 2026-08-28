@@ -14,14 +14,12 @@ jest.mock('../src/services/email.service', () => ({
 import { emailService } from '../src/services/email.service';
 import { createApp } from '../src/app';
 import { prisma } from '../src/config/prisma';
+import { aiAnalysisQueue } from '../src/jobs/queues';
 import { resetDatabase, extractCookie } from './helpers';
+import { waitForQueueIdle } from './queue-helpers';
 
 const app = createApp();
 const sendClientInviteEmailMock = emailService.sendClientInviteEmail as jest.Mock;
-
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function registerCoach(email: string, fullName: string) {
   const agent = request.agent(app);
@@ -85,7 +83,7 @@ describe('AI features with no ANTHROPIC_API_KEY configured', () => {
     const submitRes = await client.agent.post(`/api/clients/${client.clientId}/checkins`).set('X-CSRF-Token', client.csrfToken).send({ steps: 4000 });
     expect(submitRes.status).toBe(200);
 
-    await wait(100);
+    await waitForQueueIdle(aiAnalysisQueue);
 
     const insightsRes = await client.agent.get(`/api/clients/${client.clientId}/ai/insights`);
     expect(insightsRes.status).toBe(200);

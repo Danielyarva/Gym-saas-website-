@@ -6,7 +6,7 @@ import { clientRepository } from '../repositories/client.repository';
 import { coachRepository } from '../repositories/coach.repository';
 import { paymentService } from '../payments';
 import { notificationService } from './notification.service';
-import { emailService } from './email.service';
+import { emailQueue } from '../jobs/queues';
 import { auditService } from './audit.service';
 import { AppError } from '../utils/app-error';
 import { env } from '../config/env';
@@ -108,7 +108,12 @@ async function activatePayment(payment: Payment, razorpayPaymentId: string, req?
   const coach = await coachRepository.findByIdWithUser(payment.coachId);
   if (coach) {
     await notificationService.notifySubscriptionActivated(coach.userId, PLAN_LIMITS[payment.plan].label);
-    void emailService.sendPaymentReceiptEmail(coach.user.email, PLAN_LIMITS[payment.plan].label, payment.amountInPaise, payment.currency);
+    await emailQueue.add('payment-receipt', {
+      to: coach.user.email,
+      planLabel: PLAN_LIMITS[payment.plan].label,
+      amountInPaise: payment.amountInPaise,
+      currency: payment.currency,
+    });
   }
 }
 
@@ -127,11 +132,15 @@ async function verifyPayment(coachId: string, orderId: string, razorpayPaymentId
   return getStatus(coachId);
 }
 
-async function handleWebhookEvent(rawBody: Buffer, signature: string): Promise<void> {
+/** Verified synchronously in the request, before the event body is handed to `webhooksQueue` — cheap, local HMAC, and rejecting a bad signature before ACKing is correct. */
+function verifyWebhookSignature(rawBody: Buffer, signature: string): void {
   if (!paymentService.verifyWebhookSignature(rawBody, signature)) {
     throw new AppError('PAYMENT_VERIFICATION_FAILED', 'Webhook signature verification failed');
   }
+}
 
+/** Called from webhooks.processor.ts once the signature above has already been verified by the request handler. */
+async function processWebhookEvent(rawBody: Buffer): Promise<void> {
   const event = JSON.parse(rawBody.toString('utf8')) as { event?: string; payload?: { payment?: { entity?: { id: string; order_id: string } } } };
   const paymentEntity = event.payload?.payment?.entity;
   if (!paymentEntity) return;
@@ -172,7 +181,8 @@ export const subscriptionService = {
   checkAndEnforceClientLimit,
   createCheckoutOrder,
   verifyPayment,
-  handleWebhookEvent,
+  verifyWebhookSignature,
+  processWebhookEvent,
   downgradeToStarter,
   listPayments,
 };

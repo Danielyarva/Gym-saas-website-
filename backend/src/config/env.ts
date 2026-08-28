@@ -7,6 +7,12 @@ const envSchema = z.object({
 
   DATABASE_URL: z.string().min(1),
 
+  // Redis & background jobs (PRD §28). Required infrastructure, not an
+  // optional third-party key — unlike AI/email/billing, there's no
+  // graceful-degrade path once jobs carry real app behavior. Genuinely
+  // running in this sandbox (`service redis-server start`).
+  REDIS_URL: z.string().min(1),
+
   FRONTEND_URL: z.string().url(),
   BACKEND_URL: z.string().url(),
 
@@ -47,6 +53,14 @@ const envSchema = z.object({
   RAZORPAY_KEY_ID: z.string().optional().default(''),
   RAZORPAY_KEY_SECRET: z.string().optional().default(''),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional().default(''),
+
+  // Web push (PRD §21, §28). Unset in a fresh clone — push.service.ts's
+  // pushService wrapper degrades every push send to a clean no-op, the
+  // same fallback shape as AI/email/billing. This sandbox has a real,
+  // self-generated VAPID keypair, so push is genuinely exercised here.
+  VAPID_PUBLIC_KEY: z.string().optional().default(''),
+  VAPID_PRIVATE_KEY: z.string().optional().default(''),
+  VAPID_SUBJECT: z.string().optional().default(''),
 
   SEED_ADMIN_EMAIL: z.string().optional(),
   SEED_ADMIN_PASSWORD: z.string().optional(),

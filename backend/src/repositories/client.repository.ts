@@ -213,6 +213,22 @@ export const clientRepository = {
     });
     return result._avg;
   },
+
+  /** Phase 7 daily reminder sweep (reminder.service.ts) — every non-archived client with a linked account and no check-in yet on `date`, across all coaches. */
+  listActiveWithoutCheckInOnDate(date: Date) {
+    return prisma.client.findMany({
+      where: { userId: { not: null }, coachClient: { archivedAt: null }, dailyCheckIns: { none: { date } } },
+      select: { id: true, userId: true },
+    });
+  },
+
+  /** Phase 7 weekly-report fan-out (weekly-report.service.ts) — every non-archived client with at least one check-in in the given week, across all coaches. */
+  listActiveWithCheckInsInRange(weekStart: Date, weekEnd: Date) {
+    return prisma.client.findMany({
+      where: { coachClient: { archivedAt: null }, dailyCheckIns: { some: { date: { gte: weekStart, lte: weekEnd } } } },
+      select: { id: true },
+    });
+  },
 };
 
 export const coachClientRepository = {

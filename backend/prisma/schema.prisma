@@ -237,6 +237,7 @@ model User {
   passwordResetTokens     PasswordResetToken[]
   auditLogs               AuditLog[]               @relation("AuditActor")
   notifications           Notification[]
+  pushSubscriptions       PushSubscription[]
 
   @@map("users")
 }
@@ -966,4 +967,26 @@ model Payment {
 
   @@index([coachId, createdAt])
   @@map("payments")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 7: Redis-backed background jobs and web push (PRD §28, §21).
+// ---------------------------------------------------------------------------
+
+// One row per subscribed browser/device — a user can have several. Endpoint
+// is unique since the browser's push service assigns it and it identifies
+// the subscription; p256dh/auth are the keys web-push needs to encrypt a
+// payload to that endpoint.
+model PushSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }

@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import type { SubscriptionPlan } from '@prisma/client';
 import { subscriptionService } from '../services/subscription.service';
+import { webhooksQueue } from '../jobs/queues';
 import { asyncHandler } from '../utils/async-handler';
 import { sendSuccess } from '../utils/response';
 import { AppError } from '../utils/app-error';
@@ -33,12 +34,20 @@ export const listPayments = asyncHandler(async (req: Request, res: Response) => 
   sendSuccess(res, data);
 });
 
-/** Razorpay calls this directly — no session, no CSRF token. The signature check inside handleWebhookEvent is the authentication. */
+/**
+ * Razorpay calls this directly — no session, no CSRF token. The signature
+ * check is the authentication, and stays synchronous here (cheap, local
+ * HMAC) so a bad signature is rejected before ACKing. Once valid, the event
+ * itself is handed to `webhooksQueue` and this returns immediately — a
+ * transient DB hiccup then gets BullMQ's retry/backoff instead of relying
+ * on Razorpay's own retry semantics.
+ */
 export const webhook = asyncHandler(async (req: Request, res: Response) => {
   const signature = req.headers['x-razorpay-signature'];
   if (!req.rawBody || typeof signature !== 'string') {
     throw new AppError('PAYMENT_VERIFICATION_FAILED', 'Missing webhook signature');
   }
-  await subscriptionService.handleWebhookEvent(req.rawBody, signature);
+  subscriptionService.verifyWebhookSignature(req.rawBody, signature);
+  await webhooksQueue.add('process', { rawBody: req.rawBody.toString('base64') });
   sendSuccess(res, null);
 });

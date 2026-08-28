@@ -43,9 +43,12 @@ function toPublicInsight(insight: AiInsight) {
 }
 
 /**
- * Fire-and-forget, called from checkin.service.ts#submit — a slow or failing
- * AI call must never block or fail the check-in response, matching
- * email.service.ts's pattern. No-ops silently when AI isn't configured.
+ * Called from ai-analysis.processor.ts (queued from checkin.service.ts#submit
+ * via aiAnalysisQueue, Phase 7) rather than fire-and-forget directly — a slow
+ * or failing AI call must never block or fail the check-in response. Catches
+ * its own errors rather than throwing: a persistent AI failure (bad config,
+ * a malformed response) wouldn't be fixed by BullMQ's retry, so this stays a
+ * clean no-op on error/not-configured instead of consuming retry attempts.
  */
 async function analyzeCheckIn(clientId: string, checkInId: string): Promise<void> {
   if (!aiService.isConfigured()) return;

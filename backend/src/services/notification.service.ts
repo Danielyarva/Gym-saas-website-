@@ -1,16 +1,28 @@
 import type { NotificationType } from '@prisma/client';
 import { coachClientRepository } from '../repositories/client.repository';
 import { notificationRepository } from '../repositories/notification.repository';
-import { emailService } from './email.service';
+import { emailQueue, pushQueue } from '../jobs/queues';
 import { env } from '../config/env';
 
-function notify(userId: string, type: NotificationType, title: string, body: string, clientId: string) {
-  return notificationRepository.create({ userId, type, title, body, entityType: 'CLIENT', entityId: clientId });
+/**
+ * In-app row creation stays an awaited direct DB write — it must be visible
+ * immediately in the recipient's list. Only push *delivery* (a real network
+ * call to the browser's push service) goes through a queue, right after.
+ */
+async function notify(userId: string, type: NotificationType, title: string, body: string, clientId: string): Promise<void> {
+  await notificationRepository.create({ userId, type, title, body, entityType: 'CLIENT', entityId: clientId });
+  await pushQueue.add('send', { userId, title, body });
 }
 
-/** Subscription notifications are about the coach's own account, not a client — no entity to link to. */
-function notifyCoach(userId: string, type: NotificationType, title: string, body: string) {
-  return notificationRepository.create({ userId, type, title, body });
+/** Subscription/system notifications are about the user's own account, not a client — no entity to link to. */
+async function notifyCoach(userId: string, type: NotificationType, title: string, body: string): Promise<void> {
+  await notificationRepository.create({ userId, type, title, body });
+  await pushQueue.add('send', { userId, title, body });
+}
+
+async function notifySystem(userId: string, title: string, body: string): Promise<void> {
+  await notificationRepository.create({ userId, type: 'SYSTEM', title, body });
+  await pushQueue.add('send', { userId, title, body });
 }
 
 /**
@@ -50,7 +62,11 @@ async function notifyAtRisk(clientId: string): Promise<void> {
   );
 
   if (coachClient.coach.user?.email) {
-    void emailService.sendAtRiskAlertEmail(coachClient.coach.user.email, coachClient.client.fullName, `${env.FRONTEND_URL}/clients/${clientId}/overview`);
+    await emailQueue.add('at-risk-alert', {
+      to: coachClient.coach.user.email,
+      clientFullName: coachClient.client.fullName,
+      clientUrl: `${env.FRONTEND_URL}/clients/${clientId}/overview`,
+    });
   }
 }
 
@@ -70,11 +86,11 @@ async function notifyNewMessage(clientId: string, senderRole: 'COACH' | 'CLIENT'
   if (senderRole === 'COACH') {
     if (!coachClient.client.userId) return;
     await notify(coachClient.client.userId, 'NEW_MESSAGE', 'New message', `${senderName} sent you a message`, clientId);
-    void emailService.sendNewMessageEmail(coachClient.client.email, senderName, `${env.FRONTEND_URL}/messages`);
+    await emailQueue.add('new-message', { to: coachClient.client.email, senderName, threadUrl: `${env.FRONTEND_URL}/messages` });
   } else {
     await notify(coachClient.coach.userId, 'NEW_MESSAGE', 'New message', `${senderName} sent you a message`, clientId);
     if (coachClient.coach.user?.email) {
-      void emailService.sendNewMessageEmail(coachClient.coach.user.email, senderName, `${env.FRONTEND_URL}/clients/${clientId}/messages`);
+      await emailQueue.add('new-message', { to: coachClient.coach.user.email, senderName, threadUrl: `${env.FRONTEND_URL}/clients/${clientId}/messages` });
     }
   }
 }
@@ -103,6 +119,7 @@ export const notificationService = {
   notifyWeeklyReport,
   notifyNewMessage,
   notifySubscriptionActivated,
+  notifySystem,
   list,
   markRead,
   markAllRead,

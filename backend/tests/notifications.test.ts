@@ -13,7 +13,9 @@ jest.mock('../src/services/email.service', () => ({
 import { emailService } from '../src/services/email.service';
 import { createApp } from '../src/app';
 import { prisma } from '../src/config/prisma';
+import { emailQueue } from '../src/jobs/queues';
 import { resetDatabase, extractCookie } from './helpers';
+import { waitForQueueIdle } from './queue-helpers';
 
 const app = createApp();
 const sendClientInviteEmailMock = emailService.sendClientInviteEmail as jest.Mock;
@@ -92,6 +94,7 @@ describe('notification triggers', () => {
 
     const coachRes = await coach.agent.get('/api/notifications');
     expect(coachRes.body.data.notifications.map((n: { type: string }) => n.type)).toContain('NEW_MESSAGE');
+    await waitForQueueIdle(emailQueue);
     expect(sendNewMessageEmailMock).toHaveBeenCalledTimes(1);
 
     sendNewMessageEmailMock.mockClear();
@@ -99,6 +102,7 @@ describe('notification triggers', () => {
 
     const clientRes = await client.agent.get('/api/notifications');
     expect(clientRes.body.data.notifications.map((n: { type: string }) => n.type)).toContain('NEW_MESSAGE');
+    await waitForQueueIdle(emailQueue);
     expect(sendNewMessageEmailMock).toHaveBeenCalledTimes(1);
   });
 

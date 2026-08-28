@@ -1,8 +1,8 @@
 import type { Request } from 'express';
 import { checkinRepository, type CheckInInput } from '../repositories/checkin.repository';
 import { auditService } from './audit.service';
-import { aiInsightService } from './ai-insight.service';
 import { notificationService } from './notification.service';
+import { aiAnalysisQueue } from '../jobs/queues';
 import { AppError } from '../utils/app-error';
 import { todayDateOnly, dateOnly, daysBetween, subtractDays } from '../utils/date';
 
@@ -84,9 +84,11 @@ async function submit(clientId: string, input: SubmitInput, req: Request) {
 
   await auditService.log({ req, actorUserId: req.user?.id, action: 'CHECK_IN_SUBMITTED', entityType: 'CLIENT', entityId: clientId, metadata: { date: date.toISOString() } });
 
-  // PRD §17: analyze after every check-in. Fire-and-forget — analyzeCheckIn
-  // catches its own errors, matching email.service.ts's non-blocking pattern.
-  void aiInsightService.analyzeCheckIn(clientId, checkIn.id);
+  // PRD §17: analyze after every check-in. Queued (Phase 7) rather than
+  // fire-and-forget — a server restart mid-analysis no longer silently
+  // drops the work. analyzeCheckIn still catches its own errors (see its
+  // docstring), so this doesn't gain retry-on-failure, just durability.
+  await aiAnalysisQueue.add('analyze-checkin', { clientId, checkInId: checkIn.id });
 
   await notificationService.notifyCheckIn(clientId);
   if (input.workoutCompleted === false) {
