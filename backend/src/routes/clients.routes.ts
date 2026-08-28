@@ -20,6 +20,7 @@ import progressRoutes from './progress.routes';
 import aiChatRoutes from './ai-chat.routes';
 import aiInsightsRoutes from './ai-insights.routes';
 import weeklyReportRoutes from './weekly-report.routes';
+import messagesRoutes from './messages.routes';
 
 const router = Router();
 
@@ -92,5 +93,6 @@ router.use('/:id/progress', progressRoutes);
 router.use('/:id/ai/chat', aiChatRoutes);
 router.use('/:id/ai/insights', aiInsightsRoutes);
 router.use('/:id/ai/weekly-report', weeklyReportRoutes);
+router.use('/:id/messages', messagesRoutes);
 
 export default router;

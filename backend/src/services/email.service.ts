@@ -46,6 +46,14 @@ function clientInviteEmailHtml(coachFullName: string, inviteUrl: string): string
   return `<p>${coachFullName} has invited you to AI Coach OS to track your training, nutrition, and progress together.</p><p>Set up your account to get started:</p><p><a href="${inviteUrl}">${inviteUrl}</a></p><p>This link expires in ${env.CLIENT_INVITE_TTL_HOURS} hours.</p>`;
 }
 
+function newMessageEmailHtml(senderName: string, threadUrl: string): string {
+  return `<p>${senderName} sent you a new message on AI Coach OS:</p><p><a href="${threadUrl}">${threadUrl}</a></p>`;
+}
+
+function atRiskAlertEmailHtml(clientFullName: string, clientUrl: string): string {
+  return `<p>AI Coach OS flagged <strong>${clientFullName}</strong> as at risk based on their recent check-ins.</p><p><a href="${clientUrl}">${clientUrl}</a></p>`;
+}
+
 export const emailService = {
   sendVerificationEmail(to: string, rawToken: string) {
     const verifyUrl = `${env.FRONTEND_URL}/verify-email?token=${rawToken}`;
@@ -60,5 +68,13 @@ export const emailService = {
   sendClientInviteEmail(to: string, coachFullName: string, rawToken: string) {
     const inviteUrl = `${env.FRONTEND_URL}/invite?token=${rawToken}`;
     return send({ to, subject: `${coachFullName} invited you to AI Coach OS`, html: clientInviteEmailHtml(coachFullName, inviteUrl) });
+  },
+
+  sendNewMessageEmail(to: string, senderName: string, threadUrl: string) {
+    return send({ to, subject: `${senderName} sent you a message — AI Coach OS`, html: newMessageEmailHtml(senderName, threadUrl) });
+  },
+
+  sendAtRiskAlertEmail(to: string, clientFullName: string, clientUrl: string) {
+    return send({ to, subject: `${clientFullName} may need attention — AI Coach OS`, html: atRiskAlertEmailHtml(clientFullName, clientUrl) });
   },
 };

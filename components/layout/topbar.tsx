@@ -3,6 +3,7 @@
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUiStore } from '@/stores/ui-store';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { UserMenu } from './user-menu';
 
 export function Topbar() {
@@ -14,6 +15,7 @@ export function Topbar() {
         <Menu className="h-5 w-5" />
       </Button>
       <div className="flex-1" />
+      <NotificationBell />
       <UserMenu />
     </header>
   );

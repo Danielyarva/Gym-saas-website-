@@ -8,6 +8,7 @@ import { buildClientContext } from '../ai/context.service';
 import { aiService } from '../ai';
 import { AI_MODELS } from '../ai/models';
 import { auditService } from './audit.service';
+import { notificationService } from './notification.service';
 import { todayDateOnly, dateOnly, subtractDays } from '../utils/date';
 
 const MAX_OUTPUT_TOKENS = 1536;
@@ -149,6 +150,8 @@ ${context}`;
     entityId: clientId,
     metadata: { weekStart: weekStart.toISOString() },
   });
+
+  await notificationService.notifyWeeklyReport(clientId);
 
   return toPublicReport(report);
 }

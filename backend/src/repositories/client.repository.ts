@@ -214,4 +214,23 @@ export const coachClientRepository = {
   findByCoachAndClient(coachId: string, clientId: string) {
     return prisma.coachClient.findFirst({ where: { coachId, clientId } });
   },
+
+  /** The one place notification triggers and typing-indicator lookups fetch "who's on the other end of this client." */
+  findByClientId(clientId: string) {
+    return prisma.coachClient.findUnique({
+      where: { clientId },
+      include: {
+        coach: { select: { userId: true, fullName: true, user: { select: { email: true } } } },
+        client: { select: { userId: true, fullName: true, email: true } },
+      },
+    });
+  },
+
+  /** Bumps the sender's typing timestamp a few seconds into the future — the polled GET reports "typing" while it's still ahead of now. */
+  setTyping(clientId: string, role: 'COACH' | 'CLIENT', typingUntil: Date) {
+    return prisma.coachClient.updateMany({
+      where: { clientId },
+      data: role === 'COACH' ? { coachTypingUntil: typingUntil } : { clientTypingUntil: typingUntil },
+    });
+  },
 };

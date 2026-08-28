@@ -410,6 +410,58 @@ export interface CoachReportListResult {
   pageSize: number;
 }
 
+export type MessageSenderRole = 'COACH' | 'CLIENT';
+
+export interface Message {
+  id: string;
+  senderRole: MessageSenderRole;
+  content: string | null;
+  attachmentUrl: string | null;
+  attachmentType: string | null;
+  attachmentName: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface MessageListResult {
+  messages: Message[];
+  total: number;
+  page: number;
+  pageSize: number;
+  otherPartyTyping: boolean;
+}
+
+export interface CoachConversationSummary {
+  client: { id: string; fullName: string };
+  lastMessage: Message | null;
+  unreadCount: number;
+}
+
+export interface ConversationListResult {
+  conversations: CoachConversationSummary[];
+}
+
+export type NotificationType = 'CLIENT_CHECKIN' | 'CLIENT_AT_RISK' | 'MISSED_WORKOUT' | 'WEEKLY_REPORT' | 'NEW_MESSAGE' | 'SUBSCRIPTION' | 'SYSTEM';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  entityType: string | null;
+  entityId: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationListResult {
+  notifications: Notification[];
+  total: number;
+  unreadCount: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface ApiErrorBody {
   success: false;
   error: {

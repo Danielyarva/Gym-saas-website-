@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Dumbbell as LogoIcon, LogOut } from 'lucide-react';
+import { Dumbbell as LogoIcon, LogOut, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useLogout } from '@/hooks/use-auth';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { CLIENT_NAV_ITEMS } from './client-nav-items';
 
-/** The client app's entire shell: a slim header (logo + logout) and a fixed bottom nav. Deliberately simpler than the coach dashboard's sidebar/hamburger — the client surface is only ever these four pages. */
+/** The client app's entire shell: a slim header (logo, messages, notifications, logout) and a fixed bottom nav. Deliberately simpler than the coach dashboard's sidebar/hamburger — Messages and Notifications live in the header rather than a 6th bottom-nav slot. */
 export function ClientShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -23,9 +24,17 @@ export function ClientShell({ children }: { children: React.ReactNode }) {
           </div>
           <span className="text-sm font-semibold text-foreground">AI Coach OS</span>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => logout.mutate(undefined, { onSuccess: () => router.replace('/login') })} aria-label="Log out">
-          <LogOut />
-        </Button>
+        <div className="flex items-center">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/inbox" aria-label="Messages">
+              <MessageSquare className="h-5 w-5" />
+            </Link>
+          </Button>
+          <NotificationBell href="/alerts" />
+          <Button variant="ghost" size="icon" onClick={() => logout.mutate(undefined, { onSuccess: () => router.replace('/login') })} aria-label="Log out">
+            <LogOut />
+          </Button>
+        </div>
       </header>
 
       <main className="mx-auto w-full max-w-lg space-y-6 px-4 py-6 pb-24">{children}</main>

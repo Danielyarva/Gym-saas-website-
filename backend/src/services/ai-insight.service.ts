@@ -5,6 +5,7 @@ import { buildClientContext } from '../ai/context.service';
 import { aiService } from '../ai';
 import { AI_MODELS } from '../ai/models';
 import { auditService } from './audit.service';
+import { notificationService } from './notification.service';
 import { logger } from '../config/logger';
 
 const MAX_OUTPUT_TOKENS = 1024;
@@ -65,6 +66,10 @@ async function analyzeCheckIn(clientId: string, checkInId: string): Promise<void
 
     await aiInsightRepository.create({ clientId, checkInId, ...output });
     await auditService.log({ action: 'AI_INSIGHT_GENERATED', entityType: 'CLIENT', entityId: clientId, metadata: { checkInId, riskLevel: output.riskLevel } });
+
+    if (output.riskLevel === 'RED') {
+      await notificationService.notifyAtRisk(clientId);
+    }
   } catch (err) {
     logger.error({ err, clientId, checkInId }, 'AI check-in analysis failed');
   }

@@ -8,7 +8,10 @@ const TABS = [
   { label: 'Overview', segment: 'overview' },
   { label: 'Plan', segment: 'plan' },
   { label: 'Progress', segment: 'progress' },
-  { label: 'Chat', segment: 'chat' },
+  { label: 'Messages', segment: 'messages' },
+  // Same route/component as before — only the label changed, to disambiguate
+  // from the new human "Messages" tab above (this one is the read-only AI transcript).
+  { label: 'AI Coach', segment: 'chat' },
   { label: 'Notes', segment: 'notes' },
 ];
 

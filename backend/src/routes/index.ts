@@ -4,6 +4,8 @@ import dashboardRoutes from './dashboard.routes';
 import clientsRoutes from './clients.routes';
 import exercisesRoutes from './exercises.routes';
 import reportsRoutes from './reports.routes';
+import conversationsRoutes from './conversations.routes';
+import notificationsRoutes from './notifications.routes';
 
 const router = Router();
 
@@ -12,5 +14,7 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/clients', clientsRoutes);
 router.use('/exercises', exercisesRoutes);
 router.use('/reports', reportsRoutes);
+router.use('/messages', conversationsRoutes);
+router.use('/notifications', notificationsRoutes);
 
 export default router;

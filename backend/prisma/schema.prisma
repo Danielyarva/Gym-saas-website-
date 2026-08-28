@@ -47,6 +47,22 @@ enum AuditAction {
   AI_CHAT_MESSAGE_SENT
   AI_INSIGHT_GENERATED
   AI_WEEKLY_REPORT_GENERATED
+  MESSAGE_SENT
+}
+
+enum MessageSenderRole {
+  COACH
+  CLIENT
+}
+
+enum NotificationType {
+  CLIENT_CHECKIN
+  CLIENT_AT_RISK
+  MISSED_WORKOUT
+  WEEKLY_REPORT
+  NEW_MESSAGE
+  SUBSCRIPTION
+  SYSTEM
 }
 
 enum AiMessageRole {
@@ -200,6 +216,7 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]
   auditLogs               AuditLog[]               @relation("AuditActor")
+  notifications           Notification[]
 
   @@map("users")
 }
@@ -256,6 +273,7 @@ model Client {
   aiInsights       AiInsight[]
   weeklyReports    WeeklyReport[]
   aiUsageLogs      AiUsageLog[]
+  messages         Message[]
 
   @@map("clients")
 }
@@ -280,6 +298,14 @@ model CoachClient {
   // engagement health while a client is still active on the roster.
   archivedAt DateTime? @map("archived_at")
   assignedAt DateTime  @default(now()) @map("assigned_at")
+
+  // Typing indicator (Phase 5, PRD §20) without WebSockets: whichever side is
+  // typing bumps their own column a few seconds into the future; the other
+  // side's polled GET reports it "typing" while that timestamp is still
+  // ahead of now. No dedicated table, no Redis — just two ephemeral columns
+  // on the relationship they describe.
+  coachTypingUntil  DateTime? @map("coach_typing_until")
+  clientTypingUntil DateTime? @map("client_typing_until")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -724,12 +750,12 @@ model DailyCheckIn {
 }
 
 model ProgressPhoto {
-  id        String    @id @default(uuid()) @db.Uuid
-  clientId  String    @map("client_id") @db.Uuid
+  id        String   @id @default(uuid()) @db.Uuid
+  clientId  String   @map("client_id") @db.Uuid
   url       String
-  takenAt   DateTime  @map("taken_at") @db.Date
-  notes     String?   @db.Text
-  createdAt DateTime  @default(now()) @map("created_at")
+  takenAt   DateTime @map("taken_at") @db.Date
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
@@ -789,21 +815,21 @@ model AiInsight {
 // progress charts read); only aiSummary/wins/problems/suggestedActions come
 // from the model. Coach-triggered manually — no cron/job queue yet (Phase 7).
 model WeeklyReport {
-  id                   String   @id @default(uuid()) @db.Uuid
-  clientId             String   @map("client_id") @db.Uuid
-  weekStart            DateTime @map("week_start") @db.Date
-  weekEnd              DateTime @map("week_end") @db.Date
-  overallProgressPct   Decimal? @map("overall_progress_pct") @db.Decimal(5, 2)
-  weightChangeKg       Decimal? @map("weight_change_kg") @db.Decimal(5, 2)
-  workoutAdherencePct  Int?     @map("workout_adherence_pct")
-  nutritionAdherencePct Int?    @map("nutrition_adherence_pct")
-  avgSteps             Int?     @map("avg_steps")
-  avgSleepHours        Decimal? @map("avg_sleep_hours") @db.Decimal(3, 1)
-  wins                 String[]
-  problems             String[]
-  aiSummary            String   @db.Text @map("ai_summary")
-  suggestedActions     String[] @map("suggested_actions")
-  createdAt            DateTime @default(now()) @map("created_at")
+  id                    String   @id @default(uuid()) @db.Uuid
+  clientId              String   @map("client_id") @db.Uuid
+  weekStart             DateTime @map("week_start") @db.Date
+  weekEnd               DateTime @map("week_end") @db.Date
+  overallProgressPct    Decimal? @map("overall_progress_pct") @db.Decimal(5, 2)
+  weightChangeKg        Decimal? @map("weight_change_kg") @db.Decimal(5, 2)
+  workoutAdherencePct   Int?     @map("workout_adherence_pct")
+  nutritionAdherencePct Int?     @map("nutrition_adherence_pct")
+  avgSteps              Int?     @map("avg_steps")
+  avgSleepHours         Decimal? @map("avg_sleep_hours") @db.Decimal(3, 1)
+  wins                  String[]
+  problems              String[]
+  aiSummary             String   @map("ai_summary") @db.Text
+  suggestedActions      String[] @map("suggested_actions")
+  createdAt             DateTime @default(now()) @map("created_at")
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
@@ -831,4 +857,48 @@ model AiUsageLog {
 
   @@index([clientId, createdAt])
   @@map("ai_usage_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5: coach-client messaging and the notification center (PRD §20-21).
+// ---------------------------------------------------------------------------
+
+// No separate Conversation entity — CoachClient.clientId is already unique
+// (exactly one coach per client), so `clientId` alone identifies "the
+// conversation with this client," the same way DailyCheckIn/ClientNote need
+// no parent row either.
+model Message {
+  id             String            @id @default(uuid()) @db.Uuid
+  clientId       String            @map("client_id") @db.Uuid
+  senderRole     MessageSenderRole @map("sender_role")
+  content        String?           @db.Text
+  attachmentUrl  String?           @map("attachment_url")
+  attachmentType String?           @map("attachment_type")
+  attachmentName String?           @map("attachment_name")
+  // Set when the *other* role opens the thread — read/unread needs no
+  // per-recipient table since a thread has exactly one other party.
+  readAt         DateTime?         @map("read_at")
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@map("messages")
+}
+
+model Notification {
+  id         String           @id @default(uuid()) @db.Uuid
+  userId     String           @map("user_id") @db.Uuid
+  type       NotificationType
+  title      String
+  body       String           @db.Text
+  entityType String?          @map("entity_type")
+  entityId   String?          @map("entity_id") @db.Uuid
+  readAt     DateTime?        @map("read_at")
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("notifications")
 }

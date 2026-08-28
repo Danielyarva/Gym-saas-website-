@@ -32,8 +32,8 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Progress', href: '/progress', icon: LineChart, comingSoon: true },
   { label: 'AI Coach', href: '/ai-coach', icon: MessageCircle, comingSoon: true },
   { label: 'Reports', href: '/reports', icon: FileText },
-  { label: 'Messages', href: '/messages', icon: Mail, comingSoon: true },
-  { label: 'Notifications', href: '/notifications', icon: Bell, comingSoon: true },
+  { label: 'Messages', href: '/messages', icon: Mail },
+  { label: 'Notifications', href: '/notifications', icon: Bell },
   { label: 'Subscription', href: '/subscription', icon: CreditCard, comingSoon: true },
   { label: 'Settings', href: '/settings', icon: Settings, comingSoon: true },
   { label: 'Help & Support', href: '/help', icon: HelpCircle, comingSoon: true },
@@ -46,5 +46,8 @@ export const BOTTOM_NAV_ITEMS: NavItem[] = [
   // /clients/[id]/plan), so this opens the client list, the natural
   // starting point for picking who to build a plan for.
   { label: 'Plans', href: '/clients', icon: ClipboardList },
-  { label: 'Chat', href: '/ai-coach', icon: MessageCircle, comingSoon: true },
+  // PRD §3's mobile nav names this slot "Chat" — it's the messaging inbox
+  // (§20), not the per-client AI chat, which lives one level down under
+  // each client's own tabs.
+  { label: 'Chat', href: '/messages', icon: MessageCircle },
 ];

@@ -2,6 +2,7 @@ import type { Request } from 'express';
 import { checkinRepository, type CheckInInput } from '../repositories/checkin.repository';
 import { auditService } from './audit.service';
 import { aiInsightService } from './ai-insight.service';
+import { notificationService } from './notification.service';
 import { AppError } from '../utils/app-error';
 import { todayDateOnly, dateOnly, daysBetween, subtractDays } from '../utils/date';
 
@@ -86,6 +87,11 @@ async function submit(clientId: string, input: SubmitInput, req: Request) {
   // PRD §17: analyze after every check-in. Fire-and-forget — analyzeCheckIn
   // catches its own errors, matching email.service.ts's non-blocking pattern.
   void aiInsightService.analyzeCheckIn(clientId, checkIn.id);
+
+  await notificationService.notifyCheckIn(clientId);
+  if (input.workoutCompleted === false) {
+    await notificationService.notifyMissedWorkout(clientId);
+  }
 
   return toPublicCheckIn(checkIn);
 }
