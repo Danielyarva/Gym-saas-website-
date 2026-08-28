@@ -21,7 +21,21 @@ if (cloudinaryConfigured) {
 export interface UploadableFile {
   buffer: Buffer;
   originalname: string;
+  mimetype: string;
 }
+
+// Keyed by the same allowlist upload.ts's fileFilter enforces. The saved
+// file's extension is derived from this validated mimetype, never from the
+// client-supplied originalname — otherwise a request could pass the
+// mimetype check with `Content-Type: image/png` while naming the file
+// `evil.html`, and express.static would then serve it back as
+// `text/html` (by extension, not by what was declared at upload time),
+// giving a stored-XSS vector on the API's own origin.
+const EXTENSION_BY_MIME: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+};
 
 function uploadToCloudinary(file: UploadableFile, folder: string): Promise<{ url: string }> {
   return new Promise((resolve, reject) => {
@@ -37,7 +51,7 @@ function uploadToCloudinary(file: UploadableFile, folder: string): Promise<{ url
 }
 
 async function saveLocally(file: UploadableFile, folder: string): Promise<{ url: string }> {
-  const ext = path.extname(file.originalname) || '.jpg';
+  const ext = EXTENSION_BY_MIME[file.mimetype] ?? '.jpg';
   const filename = `${randomUUID()}${ext}`;
   const dir = path.join(UPLOADS_DIR, folder);
   await mkdir(dir, { recursive: true });

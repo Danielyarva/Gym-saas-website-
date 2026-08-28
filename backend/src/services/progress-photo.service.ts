@@ -11,7 +11,7 @@ async function list(clientId: string, page: number, pageSize: number) {
 }
 
 async function upload(clientId: string, file: Express.Multer.File, takenAt: Date | undefined, req: Request) {
-  const { url } = await storageService.uploadImage({ buffer: file.buffer, originalname: file.originalname }, clientId);
+  const { url } = await storageService.uploadImage({ buffer: file.buffer, originalname: file.originalname, mimetype: file.mimetype }, clientId);
   const photo = await progressPhotoRepository.create(clientId, { url, takenAt: takenAt ? dateOnly(takenAt) : todayDateOnly() });
 
   await auditService.log({

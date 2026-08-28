@@ -10,7 +10,9 @@ Phase 1 complete — authentication, coach dashboard, client management, client 
 
 Phase 2 complete — client account invites, onboarding, the exercise library, workout plan builder, nutrition plan builder, daily check-ins, and the client app shell (PRD §11–14) are implemented on both frontend and backend, code-reviewed, and verified end-to-end in a real browser (desktop + mobile). Along the way, fixed two role-handling gaps Phase 1 never needed: `(dashboard)/layout.tsx` had no role gate, and `/login` always redirected to `/dashboard` regardless of role.
 
-Next up: Phase 3 — Progress tracking, charts, progress photos, weekly reports (PRD §15 and phase breakdown). Start it in plan mode per the working process below.
+Phase 3 complete — progress charts (weight, body measurements, steps, sleep, workout/nutrition adherence) with a time-range selector, progress photos with before/after comparison, and periodic body-measurement logging via the daily check-in (PRD §15) are implemented on both frontend and backend, code-reviewed, and verified end-to-end in a real browser (desktop + mobile). `CoachClient.adherencePct`/`progressPct` — dead/always-null since Phase 1 — now get recomputed on every check-in submit, so the Overview and dashboard "Adherence"/"Average Progress" stats are real for the first time. No AI-generated weekly report (that's Phase 4's PRD §19 narrative version); the Weekly chart range plus check-in history already cover the same ground without AI.
+
+Next up: Phase 4 — AI Coach, AI check-in analysis, AI insights, AI weekly reports (PRD §16–19 and phase breakdown). Start it in plan mode per the working process below.
 
 > Update this line yourself as each phase finishes.
 
