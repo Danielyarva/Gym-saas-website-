@@ -8,6 +8,7 @@ import conversationsRoutes from './conversations.routes';
 import notificationsRoutes from './notifications.routes';
 import subscriptionsRoutes from './subscriptions.routes';
 import pushRoutes from './push.routes';
+import adminRoutes from './admin.routes';
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use('/messages', conversationsRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/subscriptions', subscriptionsRoutes);
 router.use('/push', pushRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;

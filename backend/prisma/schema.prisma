@@ -239,6 +239,10 @@ model User {
   notifications           Notification[]
   pushSubscriptions       PushSubscription[]
 
+  // Phase 8 platform-wide admin analytics (new coaches/active coaches/WAU) —
+  // role-scoped since those queries always filter by role first.
+  @@index([role, createdAt])
+  @@index([role, lastLoginAt])
   @@map("users")
 }
 
@@ -338,6 +342,9 @@ model CoachClient {
 
   @@index([coachId, status])
   @@index([coachId, archivedAt])
+  // Phase 8 platform-wide active-client count — the composites above are
+  // coachId-first, useless for a scan across every coach.
+  @@index([archivedAt])
   @@map("coach_clients")
 }
 
@@ -769,6 +776,9 @@ model DailyCheckIn {
 
   @@unique([clientId, date])
   @@index([clientId, date])
+  // Phase 8 platform-wide check-in rate — the index above is clientId-first,
+  // useless for "distinct clients checked in since X" across every client.
+  @@index([date])
   @@map("daily_checkins")
 }
 
@@ -879,6 +889,9 @@ model AiUsageLog {
   client Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
   @@index([clientId, createdAt])
+  // Phase 8 platform-wide AI usage aggregate — the index above is
+  // clientId-first, useless for a global "usage in the last N days" scan.
+  @@index([createdAt])
   @@map("ai_usage_logs")
 }
 
@@ -940,8 +953,11 @@ model Subscription {
   plan             SubscriptionPlan   @default(STARTER)
   status           SubscriptionStatus @default(ACTIVE)
   // Null for Starter (free, never expires) and whenever a paid plan has
-  // lapsed back to Starter. Checked lazily on read, not by a scheduled job —
-  // no job queue exists until Phase 7.
+  // lapsed back to Starter. Checked lazily on read (subscription.service.ts
+  // #ensureCurrent), not by a scheduled sweep — so `status` alone can be
+  // stale for a coach who hasn't hit a subscription endpoint recently; Phase
+  // 8's churn metric recomputes the effective status from this field
+  // instead of trusting `status` directly.
   currentPeriodEnd DateTime?          @map("current_period_end")
   razorpayOrderId  String?            @map("razorpay_order_id")
   createdAt        DateTime           @default(now()) @map("created_at")
@@ -949,6 +965,8 @@ model Subscription {
 
   coach Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
 
+  // Phase 8 churn/conversion aggregate.
+  @@index([status])
   @@map("subscriptions")
 }
 

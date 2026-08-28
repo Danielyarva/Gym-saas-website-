@@ -26,8 +26,10 @@ export default function ClientAppLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (meError) router.replace('/login');
-    else if (wrongRole) router.replace('/dashboard');
-  }, [meError, wrongRole, router]);
+    // ADMIN never belongs here, but sends them to their own home rather than
+    // bouncing to /dashboard (whose own role-gate would just bounce them back).
+    else if (wrongRole) router.replace(me?.user.role === 'ADMIN' ? '/admin' : '/dashboard');
+  }, [meError, wrongRole, me, router]);
 
   useEffect(() => {
     if (!onboarding) return;

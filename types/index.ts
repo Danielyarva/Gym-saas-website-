@@ -59,6 +59,36 @@ export interface DashboardData {
   upcomingTasks: { available: boolean; items: string[] };
 }
 
+export interface AdminAnalytics {
+  newCoaches: { count: number; windowDays: number };
+  newCoachesWeeklyTrend: Array<{ weekStart: string; count: number }>;
+  activeCoaches: { count: number; windowDays: number; totalCoaches: number };
+  activeClients: { count: number };
+  weeklyActiveUsers: { count: number; windowDays: number };
+  checkInRate: { pct: number | null; numerator: number; denominator: number; windowDays: number };
+  aiUsage: { requestCount: number; estimatedCostUsd: number; windowDays: number };
+  subscriptionConversion: { pct: number | null; numerator: number; denominator: number };
+  churn: { pct: number | null; numerator: number; denominator: number };
+  clientRetention: { pct: number | null; numerator: number; denominator: number };
+}
+
+export interface AdminCoachSummary {
+  id: string;
+  fullName: string;
+  email: string;
+  plan: SubscriptionPlan;
+  activeClientCount: number;
+  createdAt: string;
+  lastLoginAt: string | null;
+}
+
+export interface AdminCoachListResponse {
+  items: AdminCoachSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface ClientSummary {
   id: string;
   fullName: string;

@@ -2,20 +2,19 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { DashboardShell } from '@/components/layout/dashboard-shell';
+import { AdminShell } from '@/components/layout/admin-shell';
 import { useMe } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { data: me, isPending, isError } = useMe();
-  const wrongRole = Boolean(me && me.user.role !== 'COACH');
+  const wrongRole = Boolean(me && me.user.role !== 'ADMIN');
 
   useEffect(() => {
     if (isError) router.replace('/login');
-    // ADMIN never belongs here, but sends them to their own home rather than
-    // bouncing to /today (whose own role-gate would just bounce them back).
-    else if (wrongRole) router.replace(me?.user.role === 'ADMIN' ? '/admin' : '/today');
+    // Straight to the actual role's home, not a bounce through the other layout's own gate.
+    else if (wrongRole) router.replace(me?.user.role === 'CLIENT' ? '/today' : '/dashboard');
   }, [isError, wrongRole, me, router]);
 
   if (isPending || isError || wrongRole) {
@@ -30,5 +29,5 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  return <DashboardShell>{children}</DashboardShell>;
+  return <AdminShell>{children}</AdminShell>;
 }
