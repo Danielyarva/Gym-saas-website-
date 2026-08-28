@@ -87,7 +87,7 @@ Light mode (added for the Settings → Appearance toggle — not part of the ori
 - Text: #18181b
 - Secondary text: #71717a
 
-All accent and status colors verified at 4.6:1 or better against the light background (WCAG AA for normal text). Dark stays the default for every account unless the user opts into light.
+All accent and status colors verified at 4.6:1 or better against the light background (WCAG AA for normal text). Danger's own text-on-fill pairing (e.g. the destructive button, the unread badge) needed a separate check: the dark-mode foreground color (#fef2f2) on this lighter #dc2626 fill is only 4.415:1, just under AA — light mode uses pure white (#ffffff) as the foreground there instead, which clears 4.83:1. Dark stays the default for every account unless the user opts into light.
 
 ---
 
