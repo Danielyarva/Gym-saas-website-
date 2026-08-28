@@ -33,6 +33,11 @@ const envSchema = z.object({
   CLOUDINARY_API_SECRET: z.string().optional().default(''),
   MAX_UPLOAD_SIZE_MB: z.coerce.number().int().positive().default(5),
 
+  // AI Coach (PRD §16-19, §29-30). Unset in this sandbox — ai/index.ts's
+  // aiService wrapper degrades every AI-triggering action to a clean
+  // AI_NOT_CONFIGURED response, the same fallback shape as email/storage.
+  ANTHROPIC_API_KEY: z.string().optional().default(''),
+
   SEED_ADMIN_EMAIL: z.string().optional(),
   SEED_ADMIN_PASSWORD: z.string().optional(),
 

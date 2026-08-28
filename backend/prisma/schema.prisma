@@ -44,6 +44,20 @@ enum AuditAction {
   CHECK_IN_SUBMITTED
   PROGRESS_PHOTO_UPLOADED
   PROGRESS_PHOTO_DELETED
+  AI_CHAT_MESSAGE_SENT
+  AI_INSIGHT_GENERATED
+  AI_WEEKLY_REPORT_GENERATED
+}
+
+enum AiMessageRole {
+  USER
+  ASSISTANT
+}
+
+enum AiRiskLevel {
+  GREEN
+  YELLOW
+  RED
 }
 
 enum GoalType {
@@ -238,6 +252,10 @@ model Client {
   nutritionPlans   NutritionPlan[]
   dailyCheckIns    DailyCheckIn[]
   progressPhotos   ProgressPhoto[]
+  aiConversation   AiConversation?
+  aiInsights       AiInsight[]
+  weeklyReports    WeeklyReport[]
+  aiUsageLogs      AiUsageLog[]
 
   @@map("clients")
 }
@@ -697,7 +715,8 @@ model DailyCheckIn {
   createdAt          DateTime        @default(now()) @map("created_at")
   updatedAt          DateTime        @updatedAt @map("updated_at")
 
-  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client    Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  aiInsight AiInsight[]
 
   @@unique([clientId, date])
   @@index([clientId, date])
@@ -716,4 +735,100 @@ model ProgressPhoto {
 
   @@index([clientId, takenAt])
   @@map("progress_photos")
+}
+
+// One conversation per client (find-or-create on first chat message) — no
+// need for multiple threads in an MVP.
+model AiConversation {
+  id        String   @id @default(uuid()) @db.Uuid
+  clientId  String   @unique @map("client_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  client   Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  messages AiMessage[]
+
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id             String        @id @default(uuid()) @db.Uuid
+  conversationId String        @map("conversation_id") @db.Uuid
+  role           AiMessageRole
+  content        String        @db.Text
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("ai_messages")
+}
+
+// One row per check-in-triggered analysis. Risk detection (PRD §18) is the
+// riskLevel field inside this, not a separate pipeline — the PRD's own §17
+// example JSON already nests "riskLevel" in the analysis output.
+model AiInsight {
+  id                 String      @id @default(uuid()) @db.Uuid
+  clientId           String      @map("client_id") @db.Uuid
+  checkInId          String?     @map("check_in_id") @db.Uuid
+  riskLevel          AiRiskLevel @map("risk_level")
+  confidence         Decimal     @db.Decimal(3, 2)
+  insights           String[]
+  recommendedActions String[]    @map("recommended_actions")
+  reasoning          String      @db.Text
+  createdAt          DateTime    @default(now()) @map("created_at")
+
+  client  Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  checkIn DailyCheckIn? @relation(fields: [checkInId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, createdAt])
+  @@map("ai_insights")
+}
+
+// Structured fields are computed deterministically (same data Phase 3's
+// progress charts read); only aiSummary/wins/problems/suggestedActions come
+// from the model. Coach-triggered manually — no cron/job queue yet (Phase 7).
+model WeeklyReport {
+  id                   String   @id @default(uuid()) @db.Uuid
+  clientId             String   @map("client_id") @db.Uuid
+  weekStart            DateTime @map("week_start") @db.Date
+  weekEnd              DateTime @map("week_end") @db.Date
+  overallProgressPct   Decimal? @map("overall_progress_pct") @db.Decimal(5, 2)
+  weightChangeKg       Decimal? @map("weight_change_kg") @db.Decimal(5, 2)
+  workoutAdherencePct  Int?     @map("workout_adherence_pct")
+  nutritionAdherencePct Int?    @map("nutrition_adherence_pct")
+  avgSteps             Int?     @map("avg_steps")
+  avgSleepHours        Decimal? @map("avg_sleep_hours") @db.Decimal(3, 1)
+  wins                 String[]
+  problems             String[]
+  aiSummary            String   @db.Text @map("ai_summary")
+  suggestedActions     String[] @map("suggested_actions")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, weekStart])
+  @@map("weekly_reports")
+}
+
+// One row per AI call (chat turn, analysis, report) regardless of outcome —
+// PRD §30's explicit "track request count, tokens, estimated cost, latency,
+// errors" ask, satisfied directly rather than derived from logs elsewhere.
+model AiUsageLog {
+  id               String   @id @default(uuid()) @db.Uuid
+  clientId         String?  @map("client_id") @db.Uuid
+  feature          String
+  model            String
+  inputTokens      Int      @map("input_tokens")
+  outputTokens     Int      @map("output_tokens")
+  estimatedCostUsd Decimal  @map("estimated_cost_usd") @db.Decimal(8, 4)
+  latencyMs        Int      @map("latency_ms")
+  success          Boolean
+  errorMessage     String?  @map("error_message")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  client Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, createdAt])
+  @@map("ai_usage_logs")
 }
