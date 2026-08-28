@@ -6,6 +6,7 @@ import exercisesRoutes from './exercises.routes';
 import reportsRoutes from './reports.routes';
 import conversationsRoutes from './conversations.routes';
 import notificationsRoutes from './notifications.routes';
+import subscriptionsRoutes from './subscriptions.routes';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/exercises', exercisesRoutes);
 router.use('/reports', reportsRoutes);
 router.use('/messages', conversationsRoutes);
 router.use('/notifications', notificationsRoutes);
+router.use('/subscriptions', subscriptionsRoutes);
 
 export default router;

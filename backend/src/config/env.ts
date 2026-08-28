@@ -38,6 +38,16 @@ const envSchema = z.object({
   // AI_NOT_CONFIGURED response, the same fallback shape as email/storage.
   ANTHROPIC_API_KEY: z.string().optional().default(''),
 
+  // Subscriptions & payments (PRD §24). Unset in this sandbox —
+  // payments/index.ts's paymentService wrapper degrades every
+  // payment-triggering action to a clean BILLING_NOT_CONFIGURED response,
+  // the same fallback shape as AI/email/storage. RAZORPAY_WEBHOOK_SECRET
+  // isn't in the PRD's own env var list but is required to verify Razorpay's
+  // webhook signature — there's no working webhook without it.
+  RAZORPAY_KEY_ID: z.string().optional().default(''),
+  RAZORPAY_KEY_SECRET: z.string().optional().default(''),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional().default(''),
+
   SEED_ADMIN_EMAIL: z.string().optional(),
   SEED_ADMIN_PASSWORD: z.string().optional(),
 

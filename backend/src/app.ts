@@ -36,7 +36,18 @@ export function createApp(): Express {
     express.static(path.resolve(process.cwd(), 'uploads')),
   );
 
-  app.use(express.json({ limit: '1mb' }));
+  // The `verify` hook stashes the exact raw bytes onto req.rawBody — needed
+  // only by the Razorpay webhook route, whose signature is computed over the
+  // raw payload rather than the reparsed JSON. Every other route is
+  // unaffected; req.body still parses normally.
+  app.use(
+    express.json({
+      limit: '1mb',
+      verify: (req, _res, buf) => {
+        (req as express.Request).rawBody = buf;
+      },
+    }),
+  );
   app.use(cookieParser());
   app.use(requestContext);
   app.use(pinoHttp({ logger, genReqId: (req) => req.requestId as string }));

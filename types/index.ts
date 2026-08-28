@@ -462,6 +462,50 @@ export interface NotificationListResult {
   pageSize: number;
 }
 
+export type SubscriptionPlan = 'STARTER' | 'PRO' | 'BUSINESS';
+export type SubscriptionStatusValue = 'ACTIVE' | 'PAST_DUE' | 'CANCELED';
+export type PaymentStatus = 'CREATED' | 'CAPTURED' | 'FAILED';
+
+export interface PlanInfo {
+  plan: SubscriptionPlan;
+  label: string;
+  maxClients: number;
+  priceInPaise: number;
+}
+
+export interface SubscriptionStatus {
+  plan: SubscriptionPlan;
+  status: SubscriptionStatusValue;
+  currentPeriodEnd: string | null;
+  usage: { used: number; limit: number };
+  plans: PlanInfo[];
+}
+
+export interface CheckoutOrder {
+  orderId: string;
+  amountInPaise: number;
+  currency: string;
+  keyId: string;
+}
+
+export interface PaymentRecord {
+  id: string;
+  plan: SubscriptionPlan;
+  amountInPaise: number;
+  currency: string;
+  status: PaymentStatus;
+  razorpayOrderId: string;
+  razorpayPaymentId: string | null;
+  createdAt: string;
+}
+
+export interface PaymentListResult {
+  payments: PaymentRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface ApiErrorBody {
   success: false;
   error: {

@@ -54,6 +54,11 @@ function atRiskAlertEmailHtml(clientFullName: string, clientUrl: string): string
   return `<p>AI Coach OS flagged <strong>${clientFullName}</strong> as at risk based on their recent check-ins.</p><p><a href="${clientUrl}">${clientUrl}</a></p>`;
 }
 
+function paymentReceiptEmailHtml(planLabel: string, amountInPaise: number, currency: string): string {
+  const amount = (amountInPaise / 100).toFixed(2);
+  return `<p>Thanks for your payment — you're now on the <strong>${planLabel}</strong> plan.</p><p>Amount charged: ${currency} ${amount}</p>`;
+}
+
 export const emailService = {
   sendVerificationEmail(to: string, rawToken: string) {
     const verifyUrl = `${env.FRONTEND_URL}/verify-email?token=${rawToken}`;
@@ -76,5 +81,9 @@ export const emailService = {
 
   sendAtRiskAlertEmail(to: string, clientFullName: string, clientUrl: string) {
     return send({ to, subject: `${clientFullName} may need attention — AI Coach OS`, html: atRiskAlertEmailHtml(clientFullName, clientUrl) });
+  },
+
+  sendPaymentReceiptEmail(to: string, planLabel: string, amountInPaise: number, currency: string) {
+    return send({ to, subject: `Payment receipt — ${planLabel} plan — AI Coach OS`, html: paymentReceiptEmailHtml(planLabel, amountInPaise, currency) });
   },
 };

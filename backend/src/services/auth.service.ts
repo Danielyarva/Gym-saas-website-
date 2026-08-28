@@ -3,6 +3,7 @@ import { env } from '../config/env';
 import { userRepository } from '../repositories/user.repository';
 import { coachRepository } from '../repositories/coach.repository';
 import { clientRepository } from '../repositories/client.repository';
+import { subscriptionRepository } from '../repositories/subscription.repository';
 import { refreshTokenRepository } from '../repositories/refresh-token.repository';
 import { emailVerificationTokenRepository, passwordResetTokenRepository } from '../repositories/verification-token.repository';
 import { clientInviteTokenRepository } from '../repositories/client-invite-token.repository';
@@ -44,6 +45,7 @@ async function register(input: RegisterInput, req: Request) {
   const passwordHash = await passwordService.hash(input.password);
   const user = await userRepository.create({ email: input.email, passwordHash, role: 'COACH' });
   const coach = await coachRepository.create({ userId: user.id, fullName: input.fullName });
+  await subscriptionRepository.create(coach.id);
 
   const rawVerificationToken = generateRawToken();
   await emailVerificationTokenRepository.create({

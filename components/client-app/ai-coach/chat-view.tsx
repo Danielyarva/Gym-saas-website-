@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ChatMessageList } from '@/components/ai/chat-message-list';
-import { AiNotConfiguredState } from '@/components/ai/ai-not-configured-state';
+import { NotConfiguredState } from '@/components/ui/not-configured-state';
 import { useAiChatMessages, useSendAiChatMessage } from '@/hooks/use-ai-chat';
 import { ApiError } from '@/services/api-client';
 
@@ -58,7 +58,7 @@ export function ChatView({ clientId }: { clientId: string }) {
       )}
 
       {notConfigured ? (
-        <AiNotConfiguredState feature="AI Coach chat" />
+        <NotConfiguredState feature="AI Coach chat" />
       ) : (
         <div className="flex gap-2">
           <Textarea

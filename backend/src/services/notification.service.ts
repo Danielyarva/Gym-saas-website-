@@ -8,6 +8,11 @@ function notify(userId: string, type: NotificationType, title: string, body: str
   return notificationRepository.create({ userId, type, title, body, entityType: 'CLIENT', entityId: clientId });
 }
 
+/** Subscription notifications are about the coach's own account, not a client — no entity to link to. */
+function notifyCoach(userId: string, type: NotificationType, title: string, body: string) {
+  return notificationRepository.create({ userId, type, title, body });
+}
+
 /**
  * Every trigger below looks up the client's one coach relationship fresh —
  * cheap (one indexed query) and always current, unlike threading a coach
@@ -74,6 +79,10 @@ async function notifyNewMessage(clientId: string, senderRole: 'COACH' | 'CLIENT'
   }
 }
 
+async function notifySubscriptionActivated(userId: string, planLabel: string): Promise<void> {
+  await notifyCoach(userId, 'SUBSCRIPTION', 'Plan updated', `You're now on the ${planLabel} plan`);
+}
+
 async function list(userId: string, page: number, pageSize: number) {
   const [notifications, total, unreadCount] = await notificationRepository.listForUser(userId, page, pageSize);
   return { notifications, total, unreadCount, page, pageSize };
@@ -93,6 +102,7 @@ export const notificationService = {
   notifyAtRisk,
   notifyWeeklyReport,
   notifyNewMessage,
+  notifySubscriptionActivated,
   list,
   markRead,
   markAllRead,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { AlertTriangle, Users } from 'lucide-react';
 import { ClientListToolbar } from './client-list-toolbar';
@@ -11,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { useClients } from '@/hooks/use-clients';
+import { useSubscriptionStatus } from '@/hooks/use-subscription';
 import type { ClientStatus } from '@/types';
 import type { ListClientsParams } from '@/services/clients.service';
 
@@ -51,9 +53,18 @@ export function ClientList() {
   };
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
+  const { data: subscription } = useSubscriptionStatus();
 
   return (
     <div className="space-y-4">
+      {subscription ? (
+        <p className="text-sm text-muted-foreground">
+          <Link href="/subscription" className="hover:text-foreground hover:underline">
+            {subscription.usage.used} of {subscription.usage.limit} clients used on the {subscription.plan} plan
+          </Link>
+        </p>
+      ) : null}
+
       <ClientListToolbar
         search={search}
         onSearchChange={(value) => {

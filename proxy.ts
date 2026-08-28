@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 const AUTH_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'];
-const PROTECTED_PREFIXES = ['/dashboard', '/clients', '/reports', '/messages', '/notifications'];
+const PROTECTED_PREFIXES = ['/dashboard', '/clients', '/reports', '/messages', '/notifications', '/subscription'];
 
 /**
  * Edge-side redirect UX only — NOT the security boundary. It only checks

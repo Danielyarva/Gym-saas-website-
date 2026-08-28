@@ -5,6 +5,7 @@ import { coachRepository } from '../repositories/coach.repository';
 import { clientInviteTokenRepository } from '../repositories/client-invite-token.repository';
 import { emailService } from './email.service';
 import { auditService } from './audit.service';
+import { subscriptionService } from './subscription.service';
 import { env } from '../config/env';
 import { generateRawToken, hashToken } from '../utils/crypto';
 import { AppError } from '../utils/app-error';
@@ -92,6 +93,8 @@ async function create(coachId: string, input: CreateClientInput, req: Request) {
   if (existingUser || existingClient) {
     throw new AppError('EMAIL_ALREADY_EXISTS', 'A client with this email already exists');
   }
+
+  await subscriptionService.checkAndEnforceClientLimit(coachId);
 
   const { client, coachClient } = await clientRepository.create(coachId, input);
   await auditService.log({

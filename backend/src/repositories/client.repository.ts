@@ -201,6 +201,11 @@ export const clientRepository = {
     return rows;
   },
 
+  /** Non-archived client count against the coach's plan limit (PRD §24) — the one place this number is computed. */
+  countActive(coachId: string) {
+    return prisma.coachClient.count({ where: { coachId, archivedAt: null } });
+  },
+
   async averageAdherenceAndProgress(coachId: string) {
     const result = await prisma.coachClient.aggregate({
       where: { coachId, archivedAt: null },

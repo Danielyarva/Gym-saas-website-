@@ -48,6 +48,26 @@ enum AuditAction {
   AI_INSIGHT_GENERATED
   AI_WEEKLY_REPORT_GENERATED
   MESSAGE_SENT
+  SUBSCRIPTION_CHANGED
+  PAYMENT_SUCCEEDED
+}
+
+enum SubscriptionPlan {
+  STARTER
+  PRO
+  BUSINESS
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum PaymentStatus {
+  CREATED
+  CAPTURED
+  FAILED
 }
 
 enum MessageSenderRole {
@@ -239,6 +259,8 @@ model Coach {
   customExercises    Exercise[]
   workoutPlans       WorkoutPlan[]
   nutritionPlans     NutritionPlan[]
+  subscription       Subscription?
+  payments           Payment[]
 
   @@map("coaches")
 }
@@ -901,4 +923,47 @@ model Notification {
 
   @@index([userId, createdAt])
   @@map("notifications")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 6: subscriptions and payments (PRD §24). Plan limits (client caps,
+// prices) live in code (backend/src/config/plan-limits.ts), never here or
+// scattered across the app — this table only tracks which plan a coach is on.
+// ---------------------------------------------------------------------------
+
+model Subscription {
+  id               String             @id @default(uuid()) @db.Uuid
+  // Unique: exactly one subscription row per coach — upgrades/downgrades
+  // update this row in place rather than creating a new one.
+  coachId          String             @unique @map("coach_id") @db.Uuid
+  plan             SubscriptionPlan   @default(STARTER)
+  status           SubscriptionStatus @default(ACTIVE)
+  // Null for Starter (free, never expires) and whenever a paid plan has
+  // lapsed back to Starter. Checked lazily on read, not by a scheduled job —
+  // no job queue exists until Phase 7.
+  currentPeriodEnd DateTime?          @map("current_period_end")
+  razorpayOrderId  String?            @map("razorpay_order_id")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  coach Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Payment {
+  id                String           @id @default(uuid()) @db.Uuid
+  coachId           String           @map("coach_id") @db.Uuid
+  plan              SubscriptionPlan
+  amountInPaise     Int              @map("amount_in_paise")
+  currency          String           @default("INR")
+  status            PaymentStatus
+  razorpayOrderId   String           @map("razorpay_order_id")
+  razorpayPaymentId String?          @map("razorpay_payment_id")
+  createdAt         DateTime         @default(now()) @map("created_at")
+
+  coach Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@index([coachId, createdAt])
+  @@map("payments")
 }

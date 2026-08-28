@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
-import { AiNotConfiguredState } from './ai-not-configured-state';
+import { NotConfiguredState } from '@/components/ui/not-configured-state';
 import { useWeeklyReports, useGenerateWeeklyReport } from '@/hooks/use-weekly-reports';
 import { ApiError } from '@/services/api-client';
 import { formatDate } from '@/lib/format';
@@ -53,7 +53,7 @@ export function WeeklyReportCard({ clientId }: { clientId: string }) {
       </CardHeader>
       <CardContent>
         {notConfigured ? (
-          <AiNotConfiguredState feature="weekly reports" />
+          <NotConfiguredState feature="weekly reports" />
         ) : isPending ? (
           <Skeleton className="h-24 w-full" />
         ) : !latest ? (
