@@ -12,7 +12,9 @@ Phase 2 complete — client account invites, onboarding, the exercise library, w
 
 Phase 3 complete — progress charts (weight, body measurements, steps, sleep, workout/nutrition adherence) with a time-range selector, progress photos with before/after comparison, and periodic body-measurement logging via the daily check-in (PRD §15) are implemented on both frontend and backend, code-reviewed, and verified end-to-end in a real browser (desktop + mobile). `CoachClient.adherencePct`/`progressPct` — dead/always-null since Phase 1 — now get recomputed on every check-in submit, so the Overview and dashboard "Adherence"/"Average Progress" stats are real for the first time. No AI-generated weekly report (that's Phase 4's PRD §19 narrative version); the Weekly chart range plus check-in history already cover the same ground without AI.
 
-Next up: Phase 4 — AI Coach, AI check-in analysis, AI insights, AI weekly reports (PRD §16–19 and phase breakdown). Start it in plan mode per the working process below.
+Phase 4 complete — AI Coach chat, automatic post-check-in risk analysis, and coach-triggered weekly reports (PRD §16–19, §29–30) are implemented on both frontend and backend, code-reviewed, and verified end-to-end in a real browser (desktop + mobile). Every AI call goes through one `aiService` wrapper (Anthropic behind an `AIProvider` interface, structured output via forced tool-use, Zod-revalidated) that degrades to a clean `AI_NOT_CONFIGURED` (503) with a usage-log row whenever no `ANTHROPIC_API_KEY` is set — true throughout this sandbox, so the phase never exercised a real model response; add a key later and nothing else changes. Risk detection (§18) lives inside the same `AiInsight` row as progress analysis (§17), not a separate pipeline. Weekly reports are coach-triggered (no job queue until Phase 7), with only the narrative from AI — all metrics computed deterministically from existing check-in data.
+
+Next up: Phase 5 — messaging, notifications (PRD §20 and phase breakdown). Start it in plan mode per the working process below.
 
 > Update this line yourself as each phase finishes.
 

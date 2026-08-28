@@ -1,6 +1,10 @@
-import { MessageCircle } from 'lucide-react';
-import { ComingSoon } from '@/components/clients/profile/coming-soon';
+'use client';
+
+import { useParams } from 'next/navigation';
+import { ChatTranscript } from '@/components/ai/chat-transcript';
 
 export default function ClientChatPage() {
-  return <ComingSoon icon={MessageCircle} feature="AI Coach chat" phase={4} />;
+  const { id } = useParams<{ id: string }>();
+
+  return <ChatTranscript clientId={id} />;
 }

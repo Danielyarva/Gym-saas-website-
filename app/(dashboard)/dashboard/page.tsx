@@ -61,7 +61,7 @@ export default function DashboardPage() {
         <div className="space-y-4">
           <QuickActions />
           <RecentAlertsPanel items={data.recentAlerts} />
-          <AiInsightsPanel />
+          <AiInsightsPanel insights={data.aiInsights} />
           <UpcomingTasksPanel />
         </div>
       </div>

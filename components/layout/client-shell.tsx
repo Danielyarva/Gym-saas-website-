@@ -31,7 +31,7 @@ export function ClientShell({ children }: { children: React.ReactNode }) {
       <main className="mx-auto w-full max-w-lg space-y-6 px-4 py-6 pb-24">{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="mx-auto grid max-w-lg grid-cols-4">
+        <div className="mx-auto grid max-w-lg grid-cols-5">
           {CLIENT_NAV_ITEMS.map((item) => {
             const active = pathname.startsWith(item.href);
             return (

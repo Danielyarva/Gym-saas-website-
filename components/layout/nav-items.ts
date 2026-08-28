@@ -31,7 +31,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Plans', href: '/clients', icon: ClipboardList },
   { label: 'Progress', href: '/progress', icon: LineChart, comingSoon: true },
   { label: 'AI Coach', href: '/ai-coach', icon: MessageCircle, comingSoon: true },
-  { label: 'Reports', href: '/reports', icon: FileText, comingSoon: true },
+  { label: 'Reports', href: '/reports', icon: FileText },
   { label: 'Messages', href: '/messages', icon: Mail, comingSoon: true },
   { label: 'Notifications', href: '/notifications', icon: Bell, comingSoon: true },
   { label: 'Subscription', href: '/subscription', icon: CreditCard, comingSoon: true },

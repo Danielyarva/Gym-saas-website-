@@ -339,6 +339,77 @@ export interface ProgressCharts {
   nutritionAdherence: ProgressPoint[];
 }
 
+export type AiMessageRole = 'USER' | 'ASSISTANT';
+
+export interface AiMessage {
+  id: string;
+  role: AiMessageRole;
+  content: string;
+  createdAt: string;
+}
+
+export interface AiChatListResult {
+  messages: AiMessage[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export type AiRiskLevel = 'GREEN' | 'YELLOW' | 'RED';
+
+export interface AiInsight {
+  id: string;
+  checkInId: string | null;
+  riskLevel: AiRiskLevel;
+  confidence: number;
+  insights: string[];
+  recommendedActions: string[];
+  reasoning: string;
+  createdAt: string;
+}
+
+export interface AiInsightListResult {
+  insights: AiInsight[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface WeeklyReport {
+  id: string;
+  weekStart: string;
+  weekEnd: string;
+  overallProgressPct: number | null;
+  weightChangeKg: number | null;
+  workoutAdherencePct: number | null;
+  nutritionAdherencePct: number | null;
+  avgSteps: number | null;
+  avgSleepHours: number | null;
+  wins: string[];
+  problems: string[];
+  aiSummary: string;
+  suggestedActions: string[];
+  createdAt: string;
+}
+
+export interface WeeklyReportListResult {
+  reports: WeeklyReport[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CoachWeeklyReport extends WeeklyReport {
+  client: { id: string; fullName: string };
+}
+
+export interface CoachReportListResult {
+  reports: CoachWeeklyReport[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface ApiErrorBody {
   success: false;
   error: {

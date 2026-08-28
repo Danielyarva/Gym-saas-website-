@@ -28,7 +28,13 @@ export const aiInsightRepository = {
     ]);
   },
 
-  findLatestForClient(clientId: string) {
-    return prisma.aiInsight.findFirst({ where: { clientId }, orderBy: { createdAt: 'desc' } });
+  /** Recent non-GREEN analyses across the coach's roster, for the dashboard's AI insights panel. */
+  listRecentForCoach(coachId: string, limit: number) {
+    return prisma.aiInsight.findMany({
+      where: { riskLevel: { in: ['YELLOW', 'RED'] }, client: { coachClient: { coachId } } },
+      include: { client: { select: { fullName: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
   },
 };

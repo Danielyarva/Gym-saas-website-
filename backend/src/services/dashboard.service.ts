@@ -1,8 +1,10 @@
 import type { AuditAction, ClientStatus } from '@prisma/client';
 import { clientRepository } from '../repositories/client.repository';
 import { auditLogRepository } from '../repositories/audit-log.repository';
+import { aiInsightRepository } from '../repositories/ai-insight.repository';
 
 const RECENT_ACTIVITY_LIMIT = 10;
+const RECENT_INSIGHTS_LIMIT = 5;
 
 const ALERT_ACTIONS: AuditAction[] = ['CLIENT_STATUS_CHANGED'];
 
@@ -19,10 +21,11 @@ function summarize(action: AuditAction, metadata: unknown): string {
 }
 
 async function getDashboard(coachId: string) {
-  const [statusRows, averages, recentLogs] = await Promise.all([
+  const [statusRows, averages, recentLogs, recentInsights] = await Promise.all([
     clientRepository.countByStatus(coachId),
     clientRepository.averageAdherenceAndProgress(coachId),
     auditLogRepository.listRecentForCoach(coachId, RECENT_ACTIVITY_LIMIT),
+    aiInsightRepository.listRecentForCoach(coachId, RECENT_INSIGHTS_LIMIT),
   ]);
 
   const countFor = (status: ClientStatus) => statusRows.find((row) => row.status === status)?._count ?? 0;
@@ -48,9 +51,11 @@ async function getDashboard(coachId: string) {
     clientProgressChart: { available: false, series: [] as Array<{ date: string; value: number }> },
     recentActivity,
     recentAlerts,
-    // No AI analysis (Phase 4) or task tracking exists yet — the frontend
-    // renders a real empty state on `available: false`, never a fake list.
-    aiInsights: { available: false, items: [] as string[] },
+    aiInsights: {
+      available: recentInsights.length > 0,
+      items: recentInsights.map((insight) => `${insight.client.fullName}: ${insight.insights[0] ?? insight.reasoning}`),
+    },
+    // No task tracking exists yet — the frontend renders a real empty state on `available: false`, never a fake list.
     upcomingTasks: { available: false, items: [] as string[] },
   };
 }
