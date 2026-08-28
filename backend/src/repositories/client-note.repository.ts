@@ -1,11 +1,12 @@
 import { prisma } from '../config/prisma';
 
 export const clientNoteRepository = {
-  listForClient(clientId: string) {
+  listForClient(clientId: string, take?: number) {
     return prisma.clientNote.findMany({
       where: { clientId },
       orderBy: { createdAt: 'desc' },
       include: { coach: { select: { fullName: true } } },
+      ...(take ? { take } : {}),
     });
   },
 

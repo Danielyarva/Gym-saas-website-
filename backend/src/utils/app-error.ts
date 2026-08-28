@@ -13,7 +13,8 @@ export type ErrorCode =
   | 'INVITE_INVALID'
   | 'INVITE_EXPIRED'
   | 'CLIENT_ALREADY_LINKED'
-  | 'PLAN_NOT_ACTIVE';
+  | 'PLAN_NOT_ACTIVE'
+  | 'AI_NOT_CONFIGURED';
 
 const STATUS_BY_CODE: Record<ErrorCode, number> = {
   VALIDATION_ERROR: 400,
@@ -31,6 +32,7 @@ const STATUS_BY_CODE: Record<ErrorCode, number> = {
   INVITE_EXPIRED: 410,
   CLIENT_ALREADY_LINKED: 409,
   PLAN_NOT_ACTIVE: 404,
+  AI_NOT_CONFIGURED: 503,
 };
 
 export class AppError extends Error {
