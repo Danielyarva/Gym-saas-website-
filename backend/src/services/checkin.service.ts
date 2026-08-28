@@ -1,6 +1,7 @@
 import type { Request } from 'express';
 import { checkinRepository, type CheckInInput } from '../repositories/checkin.repository';
 import { auditService } from './audit.service';
+import { aiInsightService } from './ai-insight.service';
 import { AppError } from '../utils/app-error';
 import { todayDateOnly, dateOnly, daysBetween, subtractDays } from '../utils/date';
 
@@ -81,6 +82,10 @@ async function submit(clientId: string, input: SubmitInput, req: Request) {
   );
 
   await auditService.log({ req, actorUserId: req.user?.id, action: 'CHECK_IN_SUBMITTED', entityType: 'CLIENT', entityId: clientId, metadata: { date: date.toISOString() } });
+
+  // PRD §17: analyze after every check-in. Fire-and-forget — analyzeCheckIn
+  // catches its own errors, matching email.service.ts's non-blocking pattern.
+  void aiInsightService.analyzeCheckIn(clientId, checkIn.id);
 
   return toPublicCheckIn(checkIn);
 }

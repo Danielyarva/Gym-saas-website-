@@ -27,7 +27,7 @@ export interface ListCheckInsFilters {
   pageSize: number;
 }
 
-function weightProgressPct(startingWeightKg: number, currentWeightKg: number, goalWeightKg: number): number {
+export function weightProgressPct(startingWeightKg: number, currentWeightKg: number, goalWeightKg: number): number {
   if (startingWeightKg === goalWeightKg) return 100;
   const total = Math.abs(goalWeightKg - startingWeightKg);
   const covered = Math.abs(currentWeightKg - startingWeightKg);

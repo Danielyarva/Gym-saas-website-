@@ -17,6 +17,9 @@ import nutritionPlanRoutes from './nutrition-plan.routes';
 import checkinsRoutes from './checkins.routes';
 import progressPhotosRoutes from './progress-photos.routes';
 import progressRoutes from './progress.routes';
+import aiChatRoutes from './ai-chat.routes';
+import aiInsightsRoutes from './ai-insights.routes';
+import weeklyReportRoutes from './weekly-report.routes';
 
 const router = Router();
 
@@ -86,5 +89,8 @@ router.use('/:id/nutrition-plan', nutritionPlanRoutes);
 router.use('/:id/checkins', checkinsRoutes);
 router.use('/:id/progress-photos', progressPhotosRoutes);
 router.use('/:id/progress', progressRoutes);
+router.use('/:id/ai/chat', aiChatRoutes);
+router.use('/:id/ai/insights', aiInsightsRoutes);
+router.use('/:id/ai/weekly-report', weeklyReportRoutes);
 
 export default router;
